@@ -13,5 +13,5 @@ polysMod5 = polynomialsOver(F5, 'X')
 poly = polynomialsOver(polysMod5, 'Y')
 
 q = poly.from_string("X**2 + Y")
-print q.evaluate([1, p_])
+print q.evaluate([7, p_])
 print isinstance(p_, Placeholder)

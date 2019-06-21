@@ -134,7 +134,7 @@ def polynomialsOver(domain, variable_name):
             self.coefficients = [self.domain.evaluate(x, coeffs[:-1]) for x in self]
             val = coeffs[-1]
 
-         if isinstance(coeffs[0], Placeholder):
+         if isinstance(val, Placeholder):
             return self
          else:
             x = self.domain(val)
