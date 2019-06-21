@@ -4,14 +4,12 @@ from finite_field import *
 
 F5 = FiniteField(5,1)
 
-a = F5(7)
-b = F5(1)
-print a+b
+poly = multiivar_polynomialsOver(F5, 'X', 'Y', 'Z')
 
 
-polysMod5 = polynomialsOver(F5, 'X')
-poly = polynomialsOver(polysMod5, 'Y')
+q = poly.domain.init_from_subdomain(3, True)
+print q 
 
-q = poly.from_string("X**2 + Y")
-print q.evaluate([7, p_])
-print isinstance(p_, Placeholder)
+
+#print q.evaluate([7, p_])
+#print isinstance(p_, Placeholder)

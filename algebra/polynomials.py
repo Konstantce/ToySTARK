@@ -32,17 +32,33 @@ def polynomialsOver(domain, variable_name):
       def factory(cls, L):
          return Polynomial([cls.domain(x) for x in L])
 
+      @classmethod
+      def init_from_subdomain(cls, val, verbose = False):
+         isinstance(c, self.domain)
+            self.coefficients = [c]
+         cur_domain = cls.domain
+         domain_stack = []
+
+         while cur_domain != cls.base_field and not isinstance(val, cur_domain):
+            domain_stack.append(cur_domain)
+            cur_domain = cur_domain.domain
+         
+         for dom in reversed(domain_stack):
+            val = dom(val)
+            print val
+         return [val]
+
       def __init__(self, c):
          if type(c) is Polynomial:
             self.coefficients = copy.deepcopy(c.coefficients)
          elif isinstance(c, self.domain):
             self.coefficients = [c]
-         elif not hasattr(c, '__iter__') and not hasattr(c, 'iter'):
-            self.coefficients = [self.domain(c)]
+         # elif not hasattr(c, '__iter__') and not hasattr(c, 'iter'):
+         #    self.coefficients = [self.domain(c)]
          else:
-            self.coefficients = c
+            self.coefficients = self.init_from_subdomain(c)
 
-         self.coefficients = strip(self.coefficients, self.domain(0))
+         #self.coefficients = strip(self.coefficients, self.domain(0))
 
 
       def isZero(self): return self.coefficients == []
@@ -143,7 +159,10 @@ def polynomialsOver(domain, variable_name):
 
       @classmethod
       def from_string(cls, data):
-         return eval(data)
+         try:
+            return eval(data)
+         except:
+            raise StarkError("Unable to construct polynomial from string: " + data)
 
 
    def Zero():
@@ -158,3 +177,10 @@ def polynomialsOver(domain, variable_name):
    globals()[variable_name] = Polynomial([0, 1])
    return Polynomial
 
+
+@memoize
+def multiivar_polynomialsOver(domain, *variable_name_list):
+   cur_domain = domain
+   for var_name in variable_name_list:
+      cur_domain = polynomialsOver(cur_domain, var_name)
+   return cur_domain
