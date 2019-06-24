@@ -34,31 +34,39 @@ def polynomialsOver(domain, variable_name):
 
       @classmethod
       def init_from_subdomain(cls, val, verbose = False):
-         isinstance(c, self.domain)
-            self.coefficients = [c]
+         if verbose:
+            print val
+         
+         if isinstance(val, cls.domain):
+            return val
+         
          cur_domain = cls.domain
          domain_stack = []
 
-         while cur_domain != cls.base_field and not isinstance(val, cur_domain):
+         while True:
             domain_stack.append(cur_domain)
+            if verbose:
+               print cur_domain
+            if cur_domain == cls.base_field:
+               break
             cur_domain = cur_domain.domain
+            if isinstance(val, cur_domain):
+               break
+            
          
          for dom in reversed(domain_stack):
             val = dom(val)
-            print val
-         return [val]
+         return val
 
       def __init__(self, c):
          if type(c) is Polynomial:
             self.coefficients = copy.deepcopy(c.coefficients)
-         elif isinstance(c, self.domain):
-            self.coefficients = [c]
-         # elif not hasattr(c, '__iter__') and not hasattr(c, 'iter'):
-         #    self.coefficients = [self.domain(c)]
+         elif not isinstance(c, (list, tuple)):
+            self.coefficients = [self.init_from_subdomain(c)]
          else:
-            self.coefficients = self.init_from_subdomain(c)
+            self.coefficients = [self.init_from_subdomain(x) for x in c]
 
-         #self.coefficients = strip(self.coefficients, self.domain(0))
+         self.coefficients = strip(self.coefficients, self.domain(0))
 
 
       def isZero(self): return self.coefficients == []
@@ -153,9 +161,9 @@ def polynomialsOver(domain, variable_name):
          if isinstance(val, Placeholder):
             return self
          else:
-            x = self.domain(val)
+            x = self.base_field(val)
             func = lambda (i, coeff): coeff * (x**i)
-            return sum(map(func, enumerate(self)) , self.domain(0))
+            return sum(map(func, enumerate(self)) , self.base_field(0))
 
       @classmethod
       def from_string(cls, data):

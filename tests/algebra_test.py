@@ -1,6 +1,12 @@
 print "Hello!"
 
-from finite_field import *
+import sys
+from os import path
+sys.path.append( path.dirname( path.dirname( path.abspath(__file__) ) ) )
+
+print path.dirname(path.dirname(path.abspath(__file__)))
+
+from algebra.finite_field import *
 
 F5 = FiniteField(5,1)
 
