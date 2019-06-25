@@ -21,3 +21,11 @@ f= q.evaluate([p_, p_, 3 ])
 print f
 print type(f)
 #print isinstance(p_, Placeholder)
+a = [1, 2, 3]
+b = [4, 6, 5]
+
+def arg_printer(*q):
+    for s in q:
+        print s
+
+arg_printer(*(a + b))

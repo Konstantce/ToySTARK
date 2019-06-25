@@ -33,12 +33,18 @@ class AIR():
 
     # check if all constraints are defined at each execution step
     def consistency_check():
-        return not any([ elem = None for elem in self.trace_constraints])
+        return not any([ elem is None for elem in self.trace_constraints])
     
     # check if provided witness satisfies all of the constraints
     # witness should be 2-dimensional matrix of size [T][w] 
     def witness_check(witness):
-        for poly in boundary 
+        for i, j, val in self.boundary_constraints:
+            if witness[i][j] != val:
+                return False
+        for i, poly in enumerate(self.trace_constraints):
+            if poly.evaluate(*(witness[i] + witness[i+1])) != 0:
+                return False
+        return True
 
 
 
