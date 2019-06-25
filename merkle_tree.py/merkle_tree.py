@@ -1,11 +1,15 @@
 import hashlib
 import binascii
+from itertools import zip
 
 
 class MerkleTools(object):
-    def __init__(self, hash_funcion = hashlib.sha256, descendant_count = 2):       
+
+    self.LEFT = 0
+    self.RIGHT = 1
+
+    def __init__(self, hash_funcion = hashlib.sha256):       
         self.hash_function = hash_function
-        self.descendant_count = 2
         self.reset_tree()
 
     def _to_hex(self, x):
@@ -34,21 +38,18 @@ class MerkleTools(object):
         return self.is_ready
 
     def _calculate_next_level(self):
-        solo_leaves = None
+        solo_leaf = None
         N = len(self.levels[0])  # number of leaves on the level
 
-        if N < descendant_count: #check bound conidition
-
-        solo_leaves_count = N % descendant_count
-        if (N % descendant_count) != 0: 
-            solo_leaves = self.levels[0][-solo_leaves_count]
-            N -= solo_leaves_count
+        if (N % 2) != 0: 
+            solo_leaf = self.levels[0][-1]
+            N -= 1
 
         new_level = []
-        for l, r in zip(self.levels[0][0:N:2], self.levels[0][1:N:2]):
-            new_level.append(self.hash_function(l+r).digest())
-        if solo_leave is not None:
-            new_level.append(solo_leave)
+         for l, r in zip(self.levels[0][0:N:2], self.levels[0][1:N:2]):
+                new_level.append(self.hash_function(l+r).digest())
+        if solo_leaf is not None:
+            new_level.append(solo_leaf)
         self.levels = [new_level, ] + self.levels  # prepend new level
 
     def make_tree(self):
@@ -82,9 +83,9 @@ class MerkleTools(object):
                     continue
                 is_right_node = index % 2
                 sibling_index = index - 1 if is_right_node else index + 1
-                sibling_pos = "left" if is_right_node else "right"
+                sibling_pos = self.LEFT if is_right_node else self.RIGHT
                 sibling_value = self._to_hex(self.levels[x][sibling_index])
-                proof.append({sibling_pos: sibling_value})
+                proof.append((sibling_pos, sibling_value))
                 index = int(index / 2.)
             return proof
 
@@ -95,13 +96,7 @@ class MerkleTools(object):
             return target_hash == merkle_root
         else:
             proof_hash = target_hash
-            for p in proof:
-                try:
-                    # the sibling is a left node
-                    sibling = bytearray.fromhex(p['left'])
-                    proof_hash = self.hash_function(sibling + proof_hash).digest()
-                except:
-                    # the sibling is a right node
-                    sibling = bytearray.fromhex(p['right'])
-                    proof_hash = self.hash_function(proof_hash + sibling).digest()
+            for sibling, proof_hash in proof:
+                data = sibling + proof_hash if sibling == self.LEFT else proof_hash + sibling
+                proof_hash = self.hash_function(data).digest()
             return proof_hash == merkle_root
