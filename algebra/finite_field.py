@@ -107,6 +107,10 @@ def IntegersModP(p, prim_element = None):
                while not cls._check_if_prim_elem(v):
                   v = cls(random.randrange(cls.p)
                cls.prim_element = cls(v)
+
+      @classmethod
+      def get_num_of_elems(cls):
+         return cls.p
          
 
    IntegerModP.p = p
@@ -244,8 +248,11 @@ def FiniteField(p, m, polynomialModulus=None, variable='t'):
       @classmethod
       def set_prim_element(cls, gen):
          cls.prim_element = cls(gen)
+
+      def get_num_of_elems(cls):
+         return cls.fieldSize
            
-           
+
    Fq.__name__ = 'F_{%d^%d}' % (p,m)
    Fq.prim_elem = None
    return Fq
