@@ -16,7 +16,7 @@ class _Modular(FieldElement):
 
 
 @memoize
-def IntegersModP(p):
+def IntegersModP(p, prim_element = None):
    # check if p is prime
    if not miller_rabin(p):
       raise StarkError("%s is not prime, so can't be used to generate finite field." % (p))
@@ -80,7 +80,43 @@ def IntegersModP(p):
       def __int__(self):
          return self.n
 
+      @classmethod
+      def get_prim_element(cls):
+         if cls.prim_element is None:
+            cls.set_prim_element()
+         return cls.prim_element
+            
+      @classmethod
+      def _check_if_prim_elem(cls, val):
+         if cls.p == 2:
+            return val == 1
+         else:
+            test_degree = (self.p - 1) / 2
+            return cls(val)**test_degree == -1
+
+      @classmethod
+      def set_prim_element(cls, gen = None):
+         if gen is not None:
+            if cls._check_if_prim_elem(gen):
+               cls.prim_element = cls(gen)
+            else:
+               raise StarkError("Provided element %d is not a primitive root for Z/%d." % (gen, p))
+            else:
+               #no generator is supplied, we'll construct it ourself by trial and error method
+               v = cls(random.randrange(cls.p)
+               while not cls._check_if_prim_elem(v):
+                  v = cls(random.randrange(cls.p)
+               cls.prim_element = cls(v)
+         
+
    IntegerModP.p = p
+   if prim_element:
+      if not IntegerModP._check_if_prim_elem(prim_element):
+         raise StarkError("Provided element %d is not a primitive root for Z/%d." % (prim_element, p))
+      else:
+         IntegerModP.prim_elem = IntegerModP(prim_element)
+   else:
+      IntegerModP.prim_elem = None
    IntegerModP.__name__ = 'Z/%d' % (p)
    IntegerModP.englishName = 'IntegersMod%d' % (p)
    return IntegerModP
@@ -199,6 +235,17 @@ def FiniteField(p, m, polynomialModulus=None, variable='t'):
 
          return Fq(x) * Fq(d.coefficients[0].inverse())
 
-
+      @classmethod
+      def get_prim_element(cls):
+         if cls.prim_element is None:
+            raise StarkError("Primitive element should be manually set before retrieving.")
+         return cls.prim_element
+            
+      @classmethod
+      def set_prim_element(cls, gen):
+         cls.prim_element = cls(gen)
+           
+           
    Fq.__name__ = 'F_{%d^%d}' % (p,m)
+   Fq.prim_elem = None
    return Fq
