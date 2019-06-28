@@ -112,19 +112,35 @@ def IntegersModP(p, prim_element = None):
       def get_num_of_elems(cls):
          return cls.p
 
+      def has_sqrt(self):
+         return True if self.p == 2 else (jacobi(self.n, self.p != -1))
+
       @classmethod
       def get square_nonresidue(cls):
-         if IntegerModp.p = False
+         if cls.p == 2:
+            raise StarkError("In the field of 2 elements every element is a quadratic residue.")
+         if cls.square_nonresidue is None:
+            n = random.randrange(cls.p)
+            while jacobi(n, cls.p) != -1:
+               n = random.randrange(cls.p)
+            cls.square_nonresidue = cls(n)  
+         return cls.square_nonresidue
 
       def sqrt(self):
+         if not self.has_sqrt():
+            raise StarkError("%s doesnt posess a square root in %s.", (self, self.__class__))    
          if self.p == 2:
             return IntegerModP(self.n)
          else if self.p % 4 == 3:
             k = (self.p - 3) / 4
             a = pow(self.n, k + 1, self.p)
-            return IntegersModP(a)
+            return IntegersModP(a)          
          else if self.p % 4 == 1:
-               
+            #Quick implementation of Tonelli-Shanks algorithm
+            N = self.get_square_nonresidue()
+            e = 2
+            t = (p - 1)/ 4
+            while 
          else:
             raise StarkError("Unexpected error in sqrt method for finite field.")
            

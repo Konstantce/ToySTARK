@@ -166,36 +166,25 @@ def is_prime(p):
    return miller_rabin(p)
 
 
-def legendre_symbol(a, p):
-   #calculate the legendre symbol (a, p) with p is prime.
+def jacobi(a, n):
+   #calculate the Jacobi symbol (a, n) with n odd.
    #The result is either -1, 0 or 1
-   assert(is_prime(p), "%d is not prime: unable to compute Legendre symbol", %p)
+   assert(n % 2, "%d is not odd: unable to compute Jacobi symbol", %n)
 
-   if a >= p or a < 0:
-        return calculateLegendre(a % p, p)
-    elif a == 0 or a == 1:
-        return a
-    elif a == 2:
-        if p%8 == 1 or p%8 == 7:
-            return 1
-        else:
-            return -1
-    elif a == p-1:
-        if p%4 == 1:
-            return 1
-        else:
-            return -1
-    elif not isPrime(a):
-        factors = factorize(a)
-        product = 1
-        for pi in factors:
-            product *= calculateLegendre(pi, p)
-        return product
-    else:
-        if ((p-1)/2)%2==0 or ((a-1)/2)%2==0:
-            return calculateLegendre(p, a)
-        else:
-            return (-1)*calculateLegendre(p, a)
+   t = 1
+   a % = n
+   while a != 0:
+      while a % 2 == 0:
+         a /= 2
+         r = n % 8
+         if r == 3 or r == 5:
+            t = -t
+      a, n = n, a
+      if a % 4 == n % 4 == 3:
+            t = -t
+      a %= n
+   return t if n == 1 else 0
+
 
 #placeholder
 class Placeholder():
