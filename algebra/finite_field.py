@@ -111,9 +111,30 @@ def IntegersModP(p, prim_element = None):
       @classmethod
       def get_num_of_elems(cls):
          return cls.p
-         
+
+      @classmethod
+      def get square_nonresidue(cls):
+         if IntegerModp.p = False
+
+      def sqrt(self):
+         if self.p == 2:
+            return IntegerModP(self.n)
+         else if self.p % 4 == 3:
+            k = (self.p - 3) / 4
+            a = pow(self.n, k + 1, self.p)
+            return IntegersModP(a)
+         else if self.p % 4 == 1:
+               
+         else:
+            raise StarkError("Unexpected error in sqrt method for finite field.")
+           
 
    IntegerModP.p = p
+   IntegerModP.is_extension_field = False
+   
+   #Predefined-nonresidue is used in sqrt method
+   IntegerModp.square_nonresidue = None
+
    if prim_element:
       if not IntegerModP._check_if_prim_elem(prim_element):
          raise StarkError("Provided element %d is not a primitive root for Z/%d." % (prim_element, p))
@@ -251,8 +272,8 @@ def FiniteField(p, m, polynomialModulus=None, variable='t'):
 
       def get_num_of_elems(cls):
          return cls.fieldSize
-           
 
    Fq.__name__ = 'F_{%d^%d}' % (p,m)
    Fq.prim_elem = None
+   Fq.is_extension_field = True
    return Fq
