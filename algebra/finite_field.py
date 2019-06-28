@@ -18,7 +18,7 @@ class _Modular(FieldElement):
 @memoize
 def IntegersModP(p, prim_element = None):
    # check if p is prime
-   if not miller_rabin(p):
+   if not is_prime(p):
       raise StarkError("%s is not prime, so can't be used to generate finite field." % (p))
 
    class IntegerModP(_Modular):
