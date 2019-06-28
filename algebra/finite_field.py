@@ -140,9 +140,31 @@ def IntegersModP(p, prim_element = None):
             N = self.get_square_nonresidue()
             e = 2
             t = (p - 1)/ 4
-            while 
+            while t % 2 != 0:
+               e += 1
+               t / = 2
+
+            y = N ** t
+            r = e
+            a = IntegerModP(self.n)
+            x = a ** ((t-1)/2)
+            b = a*x*x
+            x = a*x
+
+            while b != 1:
+               m = 1
+               while (b ** (2** m) != 1):
+                  m += 1
+               assert (1 <= m <= r - 1, "Unexpected error (incorrect m) in sqrt method for finite field.")
+               l = y ** (2 ** (r - m -1))
+               y = l * l
+               r = m
+               x = x * l
+               b = b * y
+            
+            return x
          else:
-            raise StarkError("Unexpected error in sqrt method for finite field.")
+            raise StarkError("Unexpected error (incorrect p) in sqrt method for finite field.")
            
 
    IntegerModP.p = p
