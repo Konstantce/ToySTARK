@@ -15,3 +15,7 @@ f= q.evaluate([p_, p_, 3 ])
 print f
 print type(f)
 #print isinstance(p_, Placeholder)
+
+frame = b'\xff\xff\xff\xffXabccc'
+zzz = [ord(x) for x in frame]
+print zzz

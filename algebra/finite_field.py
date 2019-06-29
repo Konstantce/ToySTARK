@@ -101,12 +101,12 @@ def IntegersModP(p, prim_element = None):
                cls.prim_element = cls(gen)
             else:
                raise StarkError("Provided element %d is not a primitive root for Z/%d." % (gen, p))
-            else:
-               #no generator is supplied, we'll construct it ourself by trial and error method
-               v = cls(random.randrange(cls.p)
-               while not cls._check_if_prim_elem(v):
-                  v = cls(random.randrange(cls.p)
-               cls.prim_element = cls(v)
+         else:
+            #no generator is supplied, we'll construct it ourself by trial and error method
+            v = cls(random.randrange(cls.p))
+            while not cls._check_if_prim_elem(v):
+               v = cls(random.randrange(cls.p))
+            cls.prim_element = cls(v)
 
       @classmethod
       def get_num_of_elems(cls):
@@ -116,7 +116,7 @@ def IntegersModP(p, prim_element = None):
          return True if self.p == 2 else (jacobi(self.n, self.p != -1))
 
       @classmethod
-      def get square_nonresidue(cls):
+      def get_square_nonresidue(cls):
          if cls.p == 2:
             raise StarkError("In the field of 2 elements every element is a quadratic residue.")
          if cls.square_nonresidue is None:
@@ -131,18 +131,18 @@ def IntegersModP(p, prim_element = None):
             raise StarkError("%s doesnt posess a square root in %s.", (self, self.__class__))    
          if self.p == 2:
             return IntegerModP(self.n)
-         else if self.p % 4 == 3:
+         elif self.p % 4 == 3:
             k = (self.p - 3) / 4
             a = pow(self.n, k + 1, self.p)
             return IntegersModP(a)          
-         else if self.p % 4 == 1:
+         elif self.p % 4 == 1:
             #Quick implementation of Tonelli-Shanks algorithm
             N = self.get_square_nonresidue()
             e = 2
             t = (p - 1)/ 4
             while t % 2 != 0:
                e += 1
-               t / = 2
+               t /= 2
 
             y = N ** t
             r = e
@@ -169,9 +169,11 @@ def IntegersModP(p, prim_element = None):
 
    IntegerModP.p = p
    IntegerModP.is_extension_field = False
-   
+
+   #field characteristics
+   IntegerModP.char = p
    #Predefined-nonresidue is used in sqrt method
-   IntegerModp.square_nonresidue = None
+   IntegerModP.square_nonresidue = None
 
    if prim_element:
       if not IntegerModP._check_if_prim_elem(prim_element):
@@ -313,5 +315,8 @@ def FiniteField(p, m, polynomialModulus=None, variable='t'):
 
    Fq.__name__ = 'F_{%d^%d}' % (p,m)
    Fq.prim_elem = None
+
+   #field characteristics
+   Fq.char = p
    Fq.is_extension_field = True
    return Fq
