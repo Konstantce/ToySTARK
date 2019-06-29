@@ -23,7 +23,7 @@ def strip(L, elt):
 # increasing order of monomial degree so that, for example, [1,2,3]
 # corresponds to 1 + 2x + 3x^2
 @memoize
-def polynomialsOver(domain, variable_name):
+def polynomialsOver(domain, variable_name = 'X'):
 
    class Polynomial(DomainElement):
       operatorPrecedence = 2 if not hasattr(domain, 'is_poly') else 1 + domain.operatorPrecedence

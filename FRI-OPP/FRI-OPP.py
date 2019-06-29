@@ -1,0 +1,1 @@
+def FRI_OPP

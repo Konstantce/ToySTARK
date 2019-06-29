@@ -12,6 +12,10 @@ class AIR():
         self.trace_constraints = [None] * (T-1)
         self.vars = ['X' + str(i) for i in xrange(1, w+1)] + ['Y' + str(i) for i in xrange(1, w+1)]
         self.poly_ring = multiivar_polynomialsOver(field, *vars)
+        self.witness = None
+
+    def add_witness(witness):
+        self.witness = witness
     
     # boundary constraints are of the form (i, j, val), where 
     # i - number of step in trace from 0 to T
@@ -33,7 +37,12 @@ class AIR():
 
     # check if all constraints are defined at each execution step
     def consistency_check():
-        return not any([ elem is None for elem in self.trace_constraints])
+        if any([ elem is None for elem in self.trace_constraints]):
+            return False
+        if self.witness:
+            return witness_check(self.witness)
+        return True
+
     
     # check if provided witness satisfies all of the constraints
     # witness should be 2-dimensional matrix of size [T][w] 

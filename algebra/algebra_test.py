@@ -19,3 +19,7 @@ print type(f)
 frame = b'\xff\xff\xff\xffXabccc'
 zzz = [ord(x) for x in frame]
 print zzz
+
+import itertools
+for x in itertools.permutations(range(3)):
+    print x
