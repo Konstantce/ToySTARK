@@ -1,13 +1,14 @@
 from algebra.finite_field import *
 
-
+#TODO: may be rewrite it using metaclasses?
+#for now I use decorators
 class Domain():
     def __init__(self):
         pass
 
     @abstractmethod     
     def get_domain_size(self):
-        return size
+        pass
 
     @abstractmethod
     def get_subdomain(self):
@@ -25,11 +26,23 @@ class Domain():
     def get_coset(self, val):
         pass
 
+    @abstractmethod
+    def is_subdomain_defined(self):
+        pass
+
+    class check_subdomain_decorator(object):
+        def __init__(decorated):
+            self._decorated = decorated
+        def __call__(instance, *args, **kwargs):
+            if not instance.is_subdomain_defined():
+                raise StarkError("There is no subdomain - unable to call %s method" % decorated.__name__)
+            return decorated(instance, *args, **kwargs)
+
 
 class MultiplicativeDomain(Domain):
     __init__flag = False
 
-    def set_params()
+    def set_params(self, field, size, nu)
 
     def __init__(self, field, size, nu = 2):
         if field.is_extension_field:
@@ -87,6 +100,13 @@ class MultiplicativeDomain(Domain):
             coset = roots
 
         return coset
+
+    def get_domain_size(self):
+        pass
+
+    def is_subdomain_defined(self):
+        pass
+
 
 
 class AdditiveDomain(Domain):
