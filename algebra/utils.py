@@ -73,7 +73,6 @@ def typecheck(f):
    return newF
 
 
-
 # require a subclass to implement +-* neg and to perform typechecks on all of
 # the binary operations finally, the __init__ must operate when given a single
 # argument, provided that argument is the int zero or one
@@ -196,6 +195,17 @@ class Placeholder():
 
 global p_
 p_ = Placeholder()
+
+
+# strip all copies of elt from the end of the list
+def strip(L, elt):
+   if len(L) == 0: return L
+
+   i = len(L) - 1
+   while i >= 0 and L[i] == elt:
+      i -= 1
+
+   return L[:i+1]
        
 
 

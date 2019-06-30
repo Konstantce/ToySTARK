@@ -164,6 +164,7 @@ class AdditiveDomain(Domain):
 			return coefficients;
 
     def __init__(basis, linearized_poly_roots = None):
+        #check ring has char 2
         self.base_field = basis[0].field
         self.poly_ring = polynomialsOver(self.base_field)
         self.subspace_poly = construct_subspace_poly(basis, True)

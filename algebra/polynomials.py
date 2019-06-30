@@ -8,16 +8,6 @@ except ImportError:
 from utils import *
 import copy
 
-# strip all copies of elt from the end of the list
-def strip(L, elt):
-   if len(L) == 0: return L
-
-   i = len(L) - 1
-   while i >= 0 and L[i] == elt:
-      i -= 1
-
-   return L[:i+1]
-
 
 # create a polynomial with coefficients in any integral domain; coefficients are in
 # increasing order of monomial degree so that, for example, [1,2,3]

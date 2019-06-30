@@ -319,4 +319,5 @@ def FiniteField(p, m, polynomialModulus=None, variable='t'):
    #field characteristics
    Fq.char = p
    Fq.is_extension_field = True
+   Fq.extension_degree = m
    return Fq
