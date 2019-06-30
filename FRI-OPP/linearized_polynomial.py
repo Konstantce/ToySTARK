@@ -1,4 +1,6 @@
 from algebra.utils import *
+from algebra.linear_algebra import *
+from algebra.finite_field import *
 from math import log
 
 """A class of linearized polynomials - i.e.,
@@ -58,34 +60,28 @@ def LinearisedPolyRing(field):
 
         def _computeMatrix(self):
             dim = self.field.extension_degree
+            Mat = MatrixRing(IntegersModP(self.p))
 
+            if self._is_zero:
+                self._matrix = Mat.zero_matrix(dim)
+            else:
+                arr = []
+                x = self.field([0, 1])
+                cur = self.field(1)
 
-            x = self.field([0, 1])
-            cur = self.field(1)
-
-            for 
-            void AffinePolynomial::computeMat() {
-            const long dim = ExtensionDegree;
-
-            if (coefficients_.size() == 0){
-                polyMat_.fill(0);
-                return;
-            }
-            
-
-            for (long i = 0; i < dim; i++){
-                const FieldElement x = mapIntegerToFieldElement(i, 1, 1);
-                polyMat_[i] = mapFieldElementToInteger(0,ExtensionDegree,evalLinearPart(x,coefficients_));
-
-            }
-        }
-
+                for i in xrange(dim):
+                    y = self.evaluate(cur)
+                    arr.append(y.poly.coefficients)
+                    cur *= x
+                    self._matrix = Mat(zer0)
 
         def getMatrix(self):
             if self._matrix is None:
                 self._computeMatrix()
             return self._matrix
         
-	
+	LinearisedPoly.field = field
+    LinearisedPoly.p = field.p
+    return LinearisedPoly
 
 	

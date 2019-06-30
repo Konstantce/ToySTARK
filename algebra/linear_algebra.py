@@ -16,7 +16,7 @@ def MatrixRing(domain = Fraction):
             self.data = array
 
         @classmethod
-        def zero_matrix(cls, x_dim, y_dim):
+        def zero_matrix(cls, x_dim, y_dim = x_dim):
             mat = cls(None)           
             mat.x_dim = x_dim
             mat.y_dim = y_dim
@@ -73,17 +73,34 @@ def MatrixRing(domain = Fraction):
         def det(self):
             assert(self.x_dim == self.y_dim, "Determinant is defined only for square matrices.")
 
-            running_sum = self.domain(0)
-            for perm in itertools.permutations(range(self.x_dim)):
-                sign = 1 if len(filter(lambda (x, y): x < y, itertools.combinations(perm, 2))) % 2 == 0 else -1
-                running_sum += sign * sum([self.data[i][j] for (i, j) in enumerate(perm)])
+            #if dimension of matrix is not very large compute it by definition
+            if self.x_dim <= 6:
+                running_sum = self.domain(0)
+                for perm in itertools.permutations(range(self.x_dim)):
+                    sign = 1 if len(filter(lambda (x, y): x < y, itertools.combinations(perm, 2))) % 2 == 0 else -1
+                    running_sum += sign * sum([self.data[i][j] for (i, j) in enumerate(perm)])
+                return running_sum
+            else:
+                P, L, U = self.get_PLU_decomposition()
+                sign = 1 if len(filter(lambda (x, y): x < y, itertools.combinations(P, 2))) % 2 == 0 else -1
 
-            return running_sum
+            #in the case det > 6 - find the determinant from the PLU decomposition 
         
         #NB: this metod doesn't 
-        def gaussian_elimination(self):
+        def get_PLU_decomposition(self):
 
         #solbe linear system
 
     Matrix.domain = domain
     return Matrix
+
+
+"""solve system of linear eqyations
+if there is no solution - return None.
+If the system is undetermined (and hence there are more than one solutions) returns just one of them"""
+def solve_lin_system_PLU_form(P, L, U, b):
+
+
+def solve_lin_system(A, b):
+
+
