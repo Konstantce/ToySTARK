@@ -49,7 +49,8 @@ class MultiplicativeDomain(Domain):
         self.omega = omega
         self.has_subdomain = has_subdomain
 
-    def __init__(self, field, size, nu = 2):
+    @classmethod
+    def construct_domain(cls, field, size, nu = 2):
         if field.is_extension_field:
             raise StarkError("Multiplicative domain can be constructed only for residue fields.")
         group_order = field.get_num_of_elems() - 1
@@ -57,9 +58,13 @@ class MultiplicativeDomain(Domain):
             raise StarkError("There is no multiplicative domain of size %d in %s.", %(size, field))
 
         mul_gen = field.get_prim_element()      
-        self.omega = mul_gen ** (group_order / size)
-        self.set_params(field, size, nu, omega, size <= nu)
-       
+        omega = mul_gen ** (group_order / size)
+
+        self.__init_flag = True
+        domain = cls(self.omega, size, nu)
+        self.__init_flag = False
+        return domain
+   
     def __init__(self, omega, size, nu = 2):
         if not self.__init_flag:
             raise StarkError("This constructor should be called only from get subdomain method.")
@@ -71,9 +76,9 @@ class MultiplicativeDomain(Domain):
     @check_subdomain_decorator
     def get_subdomain(self):
         self.__init_flag = True
-        res= self.__class__(self.omega ** nu, self.size /= nu, nu)
+        subdomain = self.__class__(self.omega ** nu, self.size /= nu, nu)
         self.__init_flag = False
-        return res
+        return subdomain
 
     @check_subdomain_decorator
     def map_to_subdomain(self, val):
@@ -110,8 +115,7 @@ class MultiplicativeDomain(Domain):
 
 
 class AdditiveDomain(Domain):
-    """
-   
+    """  
     Computes the subspace polynomial that vanishes exactly over the span of spanSet (NB: only works for fields of characteristics 2)
     For simplicity, let us first describe an alg that would work assuming {e1,..ek} are lin. independent:
 	The algorithm would inductively computes the (coeffs of the) subspace polynomial P_i of the subspace spanned by {e_1,..,e_i}.
@@ -125,8 +129,12 @@ class AdditiveDomain(Domain):
 	Otherwise, we derive P_i using the formula described above.
      (This algorithm is taken from libstark implementation)
     """
-    def construct_subspace_poly(self, spanSet, check_if_basis = False):
-        base_field = spanSet
+    @classmethod
+    def _construct_subspace_poly(self, spanSet, check_if_basis = False):
+        #some initial checks
+        assert(len(spanSet) != 0, "Spanning set of subspace is empty!")
+        field = spanSet[0].__class__
+        assert(hasattr(field, "char") and field.char == 2, "Subspace polynomial creation algorithm is valid only for fields of char 2")
         if (spanSet.size() == 0){
             vector<FieldElement> idPoly(1);
             idPoly[0] = one();

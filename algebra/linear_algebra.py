@@ -140,87 +140,58 @@ def MatrixRing(domain = Fraction):
 if there is no solution - return None.
 If the system is undetermined (and hence there are more than one solutions) returns just one of them"""
 def solve_lin_system_PLU_form(P, L, U, b):
-    assert()
+    assert(L.get_dims()[0] == len(b), "Provided linear system is not quadratic.")
     dim = len(b)
+    domain = b[0].__class__
+    is_residue_field = hasattr(domain, "p") and not domain.is_extension_field
+
     #first pemute elements of B
     b = [b[i] for i in P]
     #solve Lx = b with forward propagation
+    #here we use that there are only 1's on the diagonal of L
     x = []
-    for i in xrange
+    for i in xrange(dim):
+        x_i = b[i] - sum([x[k] * L[i][k] for k in xrange(i)], domain(0))
+        x.append(x_i)
 
+    #solve Uy = x with backward propagation
+    #As it is possible to have zeroes on the main diagonal - we apply iterative method,
+    #which will work effectively only in the case of small residue finite domains and small number of diagonal zeroes
+    #If our domain is not a residue finite field - we immediately throw an exception
+    y = [domain(0)] * dim
+    i = dim - 1
+    break_points = []
+    while i >= 0:
+        if U[i][i] != domain(0):
+            y[i] = (b[i] - sum([y[k] * U[i][k] for k in xrange(i+1, dim)], domain(0))) / U[i][i]
+            i -= 1
+        else:
+            eq_check = (sum([y[k] * U[i][k] for k in xrange(i+1, dim)]) == b[i])
+            if not break_points and not eq_check:
+                #no solutions
+                return None
+            if not is_residue_field:
+                raise StarkError("The system is undetermied: we unable to solbe it for now")
+            if eq_check:
+                break_points.append((i, 0))
+                y[i] = domain(0)
+                i -= 1
+            else:
+                #return to previous breakpoint
+                idx = next( (i for i in xrange(len(break_points), -1, -1) if breakoints[i][1] != domain.p-1, None)
+                if idx is None:
+                    return None
+                else:
+                    breakpoints = breakpoints[:idx+1]
+                    breakpoints[:-1][1] += 1
+                    i, val = break_points[-1]
+                    y[i] = val
 
+    return y
+                
+        
 def solve_lin_system(A, b):
     P, L, U = get_PLU_decomposition(A)
     return solve_lin_system_PLU_form(P, L, U, b)
-
-
-def LU(A):
-    	
-	n = len(A) # Give us total of lines
-
-	# (1) Extract the b vector
-	b = [0 for i in range(n)]
-	for i in range(0,n):
-		b[i]=A[i][n]
-
-	# (2) Fill L matrix and its diagonal with 1
-	L = [[0 for i in range(n)] for i in range(n)]
-	for i in range(0,n):
-		L[i][i] = 1
-
-	# (3) Fill U matrix
-	U = [[0 for i in range(0,n)] for i in range(n)]
-	for i in range(0,n):
-		for j in range(0,n):
-			U[i][j] = A[i][j]
-
-	n = len(U)
-
-	# (4) Find both U and L matrices
-	for i in range(0,n): # for i in [0,1,2,..,n]
-		# (4.1) Find the maximun value in a column in order to change lines
-		maxElem = abs(U[i][i])
-		maxRow = i
-		for k in range(i+1, n): # Interacting over the next line
-			if(abs(U[k][i]) > maxElem):
-				maxElem = abs(U[k][i]) # Next line on the diagonal
-				maxRow = k
-
-		# (4.2) Swap the rows pivoting the maxRow, i is the current row
-		for k in range(i, n): # Interacting column by column
-			tmp=U[maxRow][k]
-			U[maxRow][k]=U[i][k]
-			U[i][k]=tmp
-
-		# (4.3) Subtract lines
-		for k in range(i+1,n):
-			c = -U[k][i]/float(U[i][i])
-			L[k][i] = c # (4.4) Store the multiplier
-			for j in range(i, n):
-				U[k][j] += c*U[i][j] # Multiply with the pivot line and subtract
-
-		# (4.5) Make the rows bellow this one zero in the current column
-		for k in range(i+1, n):
-			U[k][i]=0
-
-	n = len(L)
-
-	# (5) Perform substitutioan Ly=b
-	y = [0 for i in range(n)]
-	for i in range(0,n,1):
-		y[i] = b[i]/float(L[i][i])
-		for k in range(0,i,1):
-			y[i] -= y[k]*L[i][k]
-
-	n = len(U)
-
-	# (6) Perform substitution Ux=y
-	x = [0 in range(n)]
-	for i in range(n-1,-1,-1):
-		x[i] = y[i]/float(U[i][i])
-		for k in range (i-1,-1,-1):
-			U[i] -= x[i]*U[i][k]
-
-	return x
 
 
