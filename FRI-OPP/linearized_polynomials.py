@@ -2,6 +2,7 @@ from algebra.utils import *
 from algebra.linear_algebra import *
 from algebra.finite_field import *
 from math import log
+import itertools
 
 """A class of linearized polynomials - i.e.,
 univariate polynomials whose non-zero coefficients_ are only of monomials of the form  x^{p^i},
@@ -35,6 +36,9 @@ def LinearisedPolyRing(field):
                 x = pow(x, self.p)
             return running_sum
 
+        def __add__(self, other):
+            return LinearisedPoly([x + y for (x, y) in itertools.zip_longest(self._coeffs, other._coeffs, fillvalue=self.field(0))])
+
         @classmethod
         def _get_log(cls, n):
             v = int(log(n, self.p))
@@ -50,7 +54,11 @@ def LinearisedPolyRing(field):
 
         def get_degree(self):
             return pow(self.p, len(self._coeffs)) if not self._is_zero else -1
-            
+
+        #raise poly to p-th power
+        def frobenius_moprhism(self):
+            return LinearisedPoly([self.field(0)] + [x**self.p for x in self._coeffs])
+           
         def multiplyByConstant(self, c):
             if c == self.field(0):
                 self._coeffs = []

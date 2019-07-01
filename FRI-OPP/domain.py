@@ -1,4 +1,5 @@
 from algebra.finite_field import *
+from linearized_polynomials import * 
 
 #TODO: may be rewrite it using metaclasses?
 #for now I use decorators
@@ -127,59 +128,44 @@ class AdditiveDomain(Domain):
 	on {e1,..,e_{i-1}} - we do this by simply checking if P_{i-1}(e_i) =0.
 	If so, we simply let P_i= P_{i-1}.
 	Otherwise, we derive P_i using the formula described above.
-     (This algorithm is taken from libstark implementation)
+    (This algorithm is taken from libstark implementation)
+    Note, that thus constructed subspace polynomial is linearized
     """
     @classmethod
-    def _construct_subspace_poly(self, spanSet, check_if_basis = False):
-        #some initial checks
+    def _construct_subspace_poly(cls, spanSet):
+        #some initial checks and definitions
         assert(len(spanSet) != 0, "Spanning set of subspace is empty!")
         field = spanSet[0].__class__
         assert(hasattr(field, "char") and field.char == 2, "Subspace polynomial creation algorithm is valid only for fields of char 2")
-        if (spanSet.size() == 0){
-            vector<FieldElement> idPoly(1);
-            idPoly[0] = one();
-            return idPoly;
-        }
+        poly_ring = LinearisedPolyRing(field)
+
+        #apart from subspace polynomial we return the basis of this subspacem that is
+        #the linear independent subset of spanning set
+        basis = []
+
+        #initializing as the subspace poly of the space {0} - which is x
+        poly = poly_ring([field(1)])
+        for elem in in spanSet:
+            #compute c= P_{i-1}(e_i)
+            c = poly.evaluate(elem)
+            if c == field(0):
+                continue
+
+            basis.append(elem)          
+            poly = poly.frobenius_morphism() + poly.multiplyByConstant(c)
+        return poly
+
+    def __init__(self, spanSet, dim, roots = None, gen_random_roots = True):
+        self.subspace_poly, self.basis = cls._construct_subspace_poly(spanSet)
+        self.q = None
+        self.q_matrix = None
+
+        if roots is not None:
+            if any([self.subspace_poly(x) != field(0) for x in roots]):
+                raise StarkError("Roots do not belong to constructed subspace.")
+            self.q = self._construct_q_poly(roots)
 
 
-		//Initializing as the subspace poly of the space {0} - which is x
-		coefficients.push_back(one());
-		FieldElement c, eiPower;
-		unsigned int i = 0, j;
-		elementsSet_t::iterator z = spanSet.begin();
-		while (z != spanSet.end()){
-			//compute c= P_{i-1}(e_i)
-			c = zero();
-
-			eiPower = *z; 	//eiPower starts as ei
-			for (j = 0; j < coefficients.size(); j++) {
-				c += coefficients[j] * eiPower;
-				eiPower = sqr(eiPower);
-			}
-			//Now check if c is non-zero - which means e_i is independent of previous ej's.
-			if (!(c == zero())){
-				//if so, update P_i to be zero on the extended span of {e1,..ei}
-				i++;
-				coefficients.push_back(one());
-				for (j = i - 1; j >= 1; j--) {
-					coefficients[j] = c*coefficients[j] + sqr(coefficients[j - 1]);
-				}
-				coefficients[0] = c*coefficients[0];
-
-			}
-			z++;
-		}
-			return coefficients;
-
-    def __init__(basis, linearized_poly_roots = None):
-        #check ring has char 2
-        self.base_field = basis[0].field
-        self.poly_ring = polynomialsOver(self.base_field)
-        self.subspace_poly = construct_subspace_poly(basis, True)
-        if self.subspace_poly is None:
-            raise StarkError("Generating set is not linearly independent")
-        
-        if linearized_poly_roots in not None:
             #check if all of them are in subdomain and them construct subspace polynomial
             #there is also a special matrix assiciated with subspace polynomial - what is it used for?
             subdomain_defined = True
