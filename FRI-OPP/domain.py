@@ -1,123 +1,70 @@
 from algebra.finite_field import *
-from linearized_polynomials import * 
+from linearized_polynomials import *
+import itertools 
 
-#TODO: may be rewrite it using metaclasses?
-#for now I use decorators
-class Domain():
+
+class DomainIerarchy():
     def __init__(self):
         pass
 
     @abstractmethod     
-    def get_domain_size(self):
+    def get_domain_size(self, i):
         pass
 
     @abstractmethod
-    def get_subdomain(self):
+    def is_in_domain(self, val, i):
         pass
 
     @abstractmethod
-    def is_in_domain(self, val):
+    def map_to_subdomain(self, val, i):
         pass
 
     @abstractmethod
-    def map_to_subdomain(self, val):
+    def get_coset(self, val, i):
         pass
 
-    @abstractmethod
-    def get_coset(self, val):
-        pass
 
-    @abstractmethod
-    def is_subdomain_defined(self):
-        pass
-
-    class check_subdomain_decorator(object):
-        def __init__(decorated):
-            self._decorated = decorated
-        def __call__(instance, *args, **kwargs):
-            if not instance.is_subdomain_defined():
-                raise StarkError("The subdomain is undefined - unable to call %s method" % decorated.__name__)
-            return decorated(instance, *args, **kwargs)
-
-
-class MultiplicativeDomain(Domain):
-    __init__flag = False
-
-    def set_params(self, field, size, nu, omega, has_subdomain):
-        self.field = field
-        self.size = size
-        self.nu = nu
-        self.omega = omega
-        self.has_subdomain = has_subdomain
-
-    @classmethod
-    def construct_domain(cls, field, size, nu = 2):
+class MultiplicativeDomainIerarchy(DomainIerarchy):
+    def __init__(self, field, size, levels, nu = 2):
         if field.is_extension_field:
             raise StarkError("Multiplicative domain can be constructed only for residue fields.")
         group_order = field.get_num_of_elems() - 1
         if (group_order % size):
             raise StarkError("There is no multiplicative domain of size %d in %s.", %(size, field))
+        if size % (nu ** (levels - 1)) != 0:
+            raise StarkError("Specified size is to small to construct required number of levels")
 
         mul_gen = field.get_prim_element()      
         omega = mul_gen ** (group_order / size)
 
-        self.__init_flag = True
-        domain = cls(self.omega, size, nu)
-        self.__init_flag = False
-        return domain
+        w = omega ** (size / nu)
+        self.coset_gen = [w**k for k in xrange(nu)]
+
+        self.field = field
+        self.size = size
+        self.levels = levels
+        self.nu = nu
+        self.omega = omega
    
-    def __init__(self, omega, size, nu = 2):
-        if not self.__init_flag:
-            raise StarkError("This constructor should be called only from get subdomain method.")
-        self.set_params(omega.__class__, size, nu, omega, size <= nu)
+    def is_in_domain(self, val, i):
+        return val ** (self.size / (self.nu ** i)) == 1
 
-    def is_in_domain(self, val):
-        return val ** self.size == 1
-
-    @check_subdomain_decorator
-    def get_subdomain(self):
-        self.__init_flag = True
-        subdomain = self.__class__(self.omega ** nu, self.size /= nu, nu)
-        self.__init_flag = False
-        return subdomain
-
-    @check_subdomain_decorator
-    def map_to_subdomain(self, val):
+    def map_to_subdomain(self, val, i):
         return val ** self.nu
 
-    @check_subdomain_decorator
-    def get_coset(self, val):      
-        if (not self.get_subdomain().is_in_domain(val)):
-            raise StarkError("Provided element %s is not in subdomain" %val)
-
-        #There is a deterministic algorithm to find n'th root of val in finite residue field,
-        #google for "An Improvement of the Cipolla-Lehmer Type Algorithms" by Namhun Koo1, Gook Hwa Cho2, Byeonghwan Go2, and Soonhak Kwon
-        #however we just take succesive square roots (we have silently assumed that nu is a power of 2 here)
-        coset = [val]
-        nu = self.nu
-
-        while nu != 1:
-            assert(nu %2 == 0, "In current implementation we assumed that nu is power of 2")
-            nu /= 2
-            roots = []
-            for v in coset:
-                x = v.sqrt()
-                roots.append(x)
-                roots.append(-x)
-            coset = roots
-
-        return coset
-
-    def get_domain_size(self):
-        return self.size
-
-    def is_subdomain_defined(self):
-        return self.has_subdomain
+    def get_coset(self, val):
+        return [val * w for w in self.coset_gen]     
+        
+    def get_domain_size(self, i):
+        return self.size / (self.nu ** i)
 
 
-class AdditiveDomain(Domain):
-    """  
-    Computes the subspace polynomial that vanishes exactly over the span of spanSet (NB: only works for fields of characteristics 2)
+class AdditiveDomainIerarchy(DomainIerarchy):
+    """
+    Given linear independent spanSet [e_1, ..., e_n] computes series of subspace polynomials vanishing exactly over the subspaces
+    generated by (e1), (e1, e2), ... , (e1, e2, ..., e_m). If [e1, .., e_n are not linearly independent] returns None
+    NB: our algoruthm only works for fields of characteristics 2
+
     For simplicity, let us first describe an alg that would work assuming {e1,..ek} are lin. independent:
 	The algorithm would inductively computes the (coeffs of the) subspace polynomial P_i of the subspace spanned by {e_1,..,e_i}.
 	For i=1, this is the polynomial x^2 + e1*x. Assume we have computed P_{i-1}.
@@ -132,16 +79,13 @@ class AdditiveDomain(Domain):
     Note, that thus constructed subspace polynomial is linearized
     """
     @classmethod
-    def _construct_subspace_poly(cls, spanSet):
+    def _construct_successive_subspace_polys(cls, spanSet):
         #some initial checks and definitions
         assert(len(spanSet) != 0, "Spanning set of subspace is empty!")
         field = spanSet[0].__class__
         assert(hasattr(field, "char") and field.char == 2, "Subspace polynomial creation algorithm is valid only for fields of char 2")
         poly_ring = LinearisedPolyRing(field)
-
-        #apart from subspace polynomial we return the basis of this subspacem that is
-        #the linear independent subset of spanning set
-        basis = []
+        res = []
 
         #initializing as the subspace poly of the space {0} - which is x
         poly = poly_ring([field(1)])
@@ -149,58 +93,50 @@ class AdditiveDomain(Domain):
             #compute c= P_{i-1}(e_i)
             c = poly.evaluate(elem)
             if c == field(0):
-                continue
+                return None
 
             basis.append(elem)          
             poly = poly.frobenius_morphism() + poly.multiplyByConstant(c)
-        return poly
+            res.append(poly)
+        return res
 
-    def __init__(self, spanSet, dim, roots = None, gen_random_roots = True):
-        self.subspace_poly, self.basis = cls._construct_subspace_poly(spanSet)
-        self.q = None
-        self.q_matrix = None
+    """
+    Given spanset = [e1, e2, ..., e_n] we assume that the first domain is generated by
+    [e1, e2, ..., e_(n - nu)], the second by [e_1, e_2, ..., e_(n - 2*nu)] and so on
+    """
+    def __init__(self, spanSet, levels, nu = 1):
+        if (len(spanSet) <= levels * nu)
+            raise StarkError("Specified size is to small to construct required number of levels")
+        subspace_polys =  self._construct_successive_subspace_polys(spanSet)
+        if subspace_polys is None:
+            raise StarkError("Provided spanning set is not linear independent")
+        
+        self.basis = spanSet[::-1]
+        self.subspace_polys = subspace_polys[::-nu][:levels]
+        self.p = 2
+        self.levels = levels
+        self.nu = nu
+       
+    def get_domain_size(self, i):
+        basis_len = len(self.basis) - i*nu
+        return self.p**basis_len
 
-        if roots is not None:
-            if any([self.subspace_poly(x) != field(0) for x in roots]):
-                raise StarkError("Roots do not belong to constructed subspace.")
-            self.q = self._construct_q_poly(roots)
+    def is_in_domain(self, val, i):
+        return self.subspace_polys[i].evaluate(val) == 0
 
+    def _q_basis_generator(self, i):
+        y = (reduce((lambda c, (i,y): c + basis[i] * y), enumerate(x), 0) for x in itertools.product(xrange(3), repeat = 3))
+        return (reduce((lambda x: x * y)(a * b) for enumecoords in zip()
+        return (sum(x) for x itertools.product(xrange(3), repeat = 3)) sum(ai * bi for ai, bi in zip(a, b))
+...  for a, b in zip(A, B)]
 
-            #check if all of them are in subdomain and them construct subspace polynomial
-            #there is also a special matrix assiciated with subspace polynomial - what is it used for?
-            subdomain_defined = True
+    def map_to_subdomain(self, val, i):
+        #returns product of (val - x) for all x in subspace generated by [e_(nu *i), ..., e_(nu*(i+1) - 1)]
+        return reduce((lambda x, y: x * (val - y)), self._q_basis_generator(i), 1) 
+ 
+    def get_coset(self, val, i):
+        return (val + x for x in self._q_basis_generator(i))
 
-    @abstractmethod     
-    def get_domain_size(self):
-        pass
-
-    @abstractmethod
-    def get_subdomain(self):
-        pass
-
-    @abstractmethod
-    def is_in_domain(self, val):
-        pass
-
-    @abstractmethod
-    def map_to_subdomain(self, val):
-        pass
-
-    @abstractmethod
-    def get_coset(self, val):
-        pass
-
-    @abstractmethod
-    def is_subdomain_defined(self):
-        pass
-
-
-
-
-
-@memoize
-def get_domain(domain, variable_name):
-    def 
 
 
 
