@@ -23,6 +23,10 @@ class DomainIerarchy():
     def get_coset(self, val, i):
         pass
 
+    @abstractmethod
+    def coset_iter(self, i):
+        pass
+
 
 class MultiplicativeDomainIerarchy(DomainIerarchy):
     def __init__(self, field, size, levels, nu = 2):
@@ -57,6 +61,10 @@ class MultiplicativeDomainIerarchy(DomainIerarchy):
         
     def get_domain_size(self, i):
         return self.size / (self.nu ** i)
+
+    def coset_iter(self, i):
+        level_omega = omega ** (self.nu ** i)
+        return (self.get_coset(level_omega ** i) for i in xrange(self.get_domain_size(i) / self.nu))
 
 
 class AdditiveDomainIerarchy(DomainIerarchy):
@@ -132,7 +140,12 @@ class AdditiveDomainIerarchy(DomainIerarchy):
         return reduce((lambda x, y: x * (val - y)), self._q_basis_generator(i), 1) 
  
     def get_coset(self, val, i):
-        return (val + x for x in self._q_basis_generator(i))
+        return [val + x for x in self._q_basis_generator(i)]
+
+    def coset_iter(self, i):
+        coeffs = itertools.product(xrange(self.p), repeat = len(basis) - i - 1)
+        disjoint_representatives = (reduce((lambda c, (j,y): c + self.basis[-j-1] * y), enumerate(x), 0) for x in coeffs)
+        return (self.get_coset(x) for x in disjoint_representatives)
 
 
 
