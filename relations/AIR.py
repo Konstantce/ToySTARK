@@ -14,7 +14,7 @@ class AIR():
         self.poly_ring = multiivar_polynomialsOver(field, *vars)
         self.witness = None
 
-    def add_witness(witness):
+    def set_witness(witness):
         self.witness = witness
     
     # boundary constraints are of the form (i, j, val), where 
