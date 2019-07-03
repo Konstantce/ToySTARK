@@ -2,5 +2,5 @@ from AIR inport *
 
 
 class APR:
-    def __init__(AIR_INSTANCE, bool domain):
+    def __init__(AIR_INSTANCE, domain):
         
