@@ -193,3 +193,4 @@ def construct_interpolation_poly(poly_ring, domain, values):
       prod = reduce((lambda x, j: x * (t - domain[j])/(domain[i] - domain[i]), itertools.ifilter(pred, len(domain)), self.poly.ring.Zero(1))
       poly += values[i] * prod	
 	return poly
+

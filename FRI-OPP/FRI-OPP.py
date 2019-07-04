@@ -1,49 +1,43 @@
-from domain import *
+from domain_ierarchy import *
 from merkle_tree.merkle_tree import *
-from merkle_tree.hasher_to_field import *
+from utils.utils import *
+from UnivariatePolynomialProxy.poly_proxy import *
+
 import itertools
 
 class FRI_OPP():
-    def __init__(domain, merkleTreeFactory, hasher_to_field):
-        self.domain = domain
-        self.poly_ring = polynomialsOver(domain, "t")
-        self.merkleTreeFactory = merkleTreeFactory
-        self.hasher_to_field = hasher_to_field
+    def __init__(domain_ierarchy, merkle_tree):
+        self.domain_ierarchy = domain_ierarchy
+        self.field = domain_ierarchy.get_field()
+        self.poly_ring = polynomialsOver(field, "t")
+        self.merkle_tree = merkle_tree
 
-    
-        
-    #we do construct Merkle trees as a output
     #TODO: balance the tree by corresponding cosets
-    #NB: poly is represented in the form of domain
     def generate_proof(self, poly):
         #emulate commit phase
-
         #construct all polynomials: f_0, f_1, ..., f_(n-1)
+
         f_commitments = []
         f = poly
 
-        for i in self.domain.levels:
+        for i in self.domain_ierarchy.levels:
             #commit to current f-poly
-            leaves = []
-            for coset in self.domain.coset_iter(i):
-                leaves += [f[x] for x in coset]
-                tree = self.merkleTreeFactory(leaves)
-                f_commitments.append(tree)
-                commitment = self.hasher_to_field(tree.get_merkle_root())
+            leaves = [f(x) for x  in self.domain_ierarchy.get_domain_iter(i)]
+            tree = self.merkle_tree(leaves)
+            f_commitments.append(tree)
+            sample_point = self.field.from_hash(tree.get_merkle_root())
 
-            #construct nex polynomial
+            #construct next polynomial
             f_new = {}
-            for coset in self.domain.coset_iter(i):
-                values = [f[x] for x in coset]
-                Lagrange_poly = self._construct_interpolation_poly(coset, values)
-                y = self.domain.map_to_subdomain(coset[0])
-                f_new[y] = Lagrange_poly.evaluate(commitment)
-            f = f_new
+            for coset in self.domain_ierarchy.get_coset_iter(i):
+                values = [f(x) for x in coset]
+                Lagrange_poly = construct_interpolation_poly(self.field, coset, values)
+                y = self.domain.map_to_subdomain(coset[0], i)
+                f_new[y] = Lagrange_poly.evaluate(sample_point)
+            f = PolyProxy(f_new)
 
     #for final step - just return the coefficients of the last polynomial f_n
-    domain, values = zip(*f.items())
-    f_last = self._construct_interpolation_poly(domain, values)
-    coeffs = f_last.coefficients
+    coeffs = f.get_coefficients()
     commitment_proof = ([tree.get_merkle_root() for tree in f_commitment], coeffs)
 
     #from now emulate query phase

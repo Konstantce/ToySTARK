@@ -54,7 +54,7 @@ class DomainIerarchy():
     #returns point (alongside with its' trapdoor information) from random bitstring
     #which should be the Python bytes types - a usual digest for different hash functions
     @abstractmethod
-    def from_hash(self, data):
+    def from_hash(self, i, data):
         pass
     
     #here where the trapdoor information is used - returns the position of point p
@@ -70,20 +70,22 @@ class DomainIerarchy():
     def get_preimage(self, y, i):
         pass
 
+    def get_field
+
 
 class MultiplicativeDomainIerarchy(DomainIerarchy):
     def __init__(self, field, size, levels, nu = 1):
         group_order = field.get_num_of_elems() - 1
         if (group_order % size):
             raise StarkError("There is no multiplicative domain of size %d in %s.", %(size, field))
-        if size % (nu ** (levels - 1)) != 0:
-            raise StarkError("Specified size is to small to construct required number of levels")
+        if size % (2 **(nu * (levels - 1))) != 0:
+            raise StarkError("Specified size is to small to construct required number of levels.")
 
         mul_gen = field.get_prim_element()      
         omega = mul_gen ** (group_order / size)
 
-        w = omega ** (size / nu)
-        self.coset_gen = [w**k for k in xrange(nu)]
+        w = omega ** (size / (2**nu))
+        self.coset_gen = [w**k for k in xrange(2 ** nu)]
 
         self.field = field
         self.size = size
@@ -92,24 +94,63 @@ class MultiplicativeDomainIerarchy(DomainIerarchy):
         self.omega = omega
 
     def get_domain_size(self, i):
-        return self.size / (self.nu ** i)
+        return self.size / (2**(self.nu * i))
    
     def is_in_domain(self, p, i):
         p = p[0] if isinstance(p, tuple) else p
-        return p ** (self.size / (self.nu ** i)) == 1
+        return p ** get_domain_size(i) == 1
 
     def map_to_subdomain(self, p, i):
-        return val ** self.nu
+        if isinstance(p, tuple):
+            return (p[0] ** (2 ** self.nu), (p[1] * (2 ** nu)) % get_domain_size(i+1))
+        else:
+            return p ** (2 ** self.nu)
 
-    def get_coset(self, val):
-        return [val * w for w in self.coset_gen]     
-        
+    def get_coset(self, p):
+        p = p[0] if isinstance(p, tuple) else p
+        return [p * w for w in self.coset_gen]
+
+    def _get_level_generator(self, i):
+        return self.omega ** (2 ** (self.nu * i))
+
+    def get_coset_iter(self, i):
+        level_omega = self._get_level_generator(i)
+        return (self.get_coset(level_omega ** i) for i in xrange(self.get_domain_size(i) / (2 ** self.nu)))
+
+    def get_domain_iter(self, i):
+        level_omega = self._get_level_generator(i)
+        return (level_omega ** i for i in xrange(self.get_domain_size(i)))
+
+    @staticmethod
+    def _bitlen(x):
+    	length = 0
+        while (x):
+            int_type >>= 1
+            length += 1
+        return length
     
+    #returns point (alongside with its' trapdoor information) from random bitstring
+    #which should be the Python bytes types - a usual digest for different hash functions
+    def from_hash(self, i, data):
+        if (self._bitlen(self.get_domain_size(i)) >= self.)
 
-    def coset_iter(self, i):
-        level_omega = omega ** (self.nu ** i)
-        return (self.get_coset(level_omega ** i) for i in xrange(self.get_domain_size(i) / self.nu))
+        level_omega = self._get_level_generator(i)
+        pass
+    
+    #here where the trapdoor information is used - returns the position of point p
+    # as it would be returned by the i-th level iterator 
+    @abstactmethod
+    def get_index(self, p, i):
+        pass
 
+    #assuming point y is in domain i >= 1, returns the list of its' preimages in domain i-1
+    #this method is not necessary for implementing the FRI-OPP protocol, 
+    # but os of certain use for debugging purposes 
+    @abstractmethod 
+    def get_preimage(self, y, i):
+         p = p[0] if isinstance(p, tuple) else p
+        pass     
+        
 
 class AdditiveDomainIerarchy(DomainIerarchy):
     """
