@@ -20,7 +20,7 @@ class FRI_OPP():
         f_commitments = []
         f = poly
 
-        for i in self.domain_ierarchy.levels:
+        for i in xrange(self.domain_ierarchy.levels - 1):
             #commit to current f-poly
             leaves = [f(x) for x  in self.domain_ierarchy.get_domain_iter(i)]
             tree = self.merkle_tree(leaves)
@@ -41,36 +41,49 @@ class FRI_OPP():
     commitment_proof = ([tree.get_merkle_root() for tree in f_commitment], coeffs)
 
     #from now emulate query phase
-    coeffs_tree = self.MerkleTreeFactory(coeffs)
-    s = self.domain.get_elem_from_random_bytes(coeffs_tree.get_merkle_root())
+    coeffs_tree = self.merkle_tree(coeffs)
+    s = self.domain_ierarchy.from_hash(coeffs_tree.get_merkle_root())
     query_proof = []
 
-    for i in self.domain.levels:
-        coset_idx = self.domain.get_coset_index(s, i)
-        coset_size = self.domain.get_coset_size(i)
-        level_query = [(f_commitment[i].get_leaf(idx), f_commitment[i].get_proof(idx)) for idx in xrange(coset_idx, coset_idx + coset_size)]
+    for i in self.domain_ierarchy.levels:
+        coset_indices = [self.domain_ierarchy.get_index(p, i) for p self.domain.get_coset(s, i)]
+        level_query = [(f_commitment[i].get_leaf(idx), f_commitment[i].get_proof(idx)) for idx in coset_indices)]
         query_proof.append(level_query)
-        s = self.domain.map_to_subdomain(s)
+        s = self.domain_ierarchy.map_to_subdomain(s)
 
     return (commitment_proof, query_proof)
 
+
     def validate_proof(self, proof):
         commitment_proof, query_proof = proof
-        root_hashes, coeffs = commitment_proof
+        root_hashes, f_last_coeffs = commitment_proof
 
-        coeffs_tree = self.MerkleTreeFactory(coeffs)
-        s = self.domain.get_elem_from_random_bytes(coeffs_tree.get_merkle_root())
+        coeffs_tree = self.merkle_tree(f_last_coeffs)
+        s = self.domain_ierarchy.from_hash(coeffs_tree.get_merkle_root())
 
-        for i in self.domain.levels:
-            coset_idx = self.domain.get_coset_index(s, i)
-            coset_size = self.domain.get_coset_size(i)
-            coset = self.domain.get_coset(coset_idx)
-            idx = coset_idx
-            for (leaf, proof) in query_proof[i]:
-                if not self.MerkleTreeFactory.validate_proof(proof, leaf, root_hashes[i]):
+        for i in xrange(self.domain_ierarchy.levels - 1):
+            coset = self.domain_ierarchy.get_coset(s, i)
+            coset_indices = [self.domain_ierarchy.get_index(p, i) for p in coset]
+            for idx, (leaf, proof) in zip(coset_indices, query_proof[i]):
+                if not self.merkle_tree.validate_proof(leaf, idx, proof, root_hashes[i]):
                     return False
-            interpolant = self._construct_interpolation_poly(coset, leaves)
-            #TODO: apply round consistency check here
+
+            #perform ’round consistency’ check
+            interpolant = construct_interpolation_poly(field, coset, [x for (x, y) in query_proof[i]])
+            sample_point = self.field.from_hash(root_hashes[i])
+
+            if i != self.domain_ierarchy.levels - 2:
+                y, _ = query_proof[i+1][0]              
+            else:
+                #last round
+                f_last = self.poly_ring(f_last_coeffs)
+                s = self.domain_ierarchy.map_to_subdomain(s, i)
+                y = f_last.evaluate(s)
+
+            if  y != interpolant.evaluate(sample_point):
+                    return False
+        
+        return True
 
 
 

@@ -23,7 +23,6 @@ class APR:
            We say that w satisfies the instance if and only if deg(f) < d and f satisfies all of the
            constraints. 
         """
-
         self.witness = witness
 
     def check_witness():
@@ -43,6 +42,7 @@ class APR:
 
     @classmethod
     def fromAIR(cls, AIR):
+        assert(AIR.consistency_check(), "AIR instance is not fully defined.")
         field = AIR.field
         W = AIR.w
         T = AIR.T

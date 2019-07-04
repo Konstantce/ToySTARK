@@ -37,6 +37,7 @@ class DomainIerarchy():
 
     #assuming point p belongs to the i-th level, return the corresponding coset of this point,
     #in other return p=p1, p2, .., pn all points in the i-th domain which map to the same value y under q_i 
+     #NB: if p is a tuple (p, trapdoor) alsp returns a list of tuples 
     @abstractmethod
     def get_coset(self, p, i):
         pass
@@ -70,7 +71,10 @@ class DomainIerarchy():
     def get_preimage(self, y, i):
         pass
 
-    def get_field
+    #get the underlying finite field
+    @abstractmethod
+    def get_field(self):
+        pass
 
 
 class MultiplicativeDomainIerarchy(DomainIerarchy):
@@ -84,7 +88,9 @@ class MultiplicativeDomainIerarchy(DomainIerarchy):
         mul_gen = field.get_prim_element()      
         omega = mul_gen ** (group_order / size)
 
-        w = omega ** (size / (2**nu))
+        w_index = size / (2**nu)
+        w = omega ** w_index
+        self.w_index = w_index
         self.coset_gen = [w**k for k in xrange(2 ** nu)]
 
         self.field = field
@@ -102,13 +108,15 @@ class MultiplicativeDomainIerarchy(DomainIerarchy):
 
     def map_to_subdomain(self, p, i):
         if isinstance(p, tuple):
-            return (p[0] ** (2 ** self.nu), (p[1] * (2 ** nu)) % get_domain_size(i+1))
+            return (p[0] ** (2 ** self.nu), (p[1] * (2 ** nu)) % self.get_domain_size(i+1))
         else:
             return p ** (2 ** self.nu)
 
-    def get_coset(self, p):
-        p = p[0] if isinstance(p, tuple) else p
-        return [p * w for w in self.coset_gen]
+    def get_coset(self, p, i):
+        if isinstance(p, tuple):
+            return [(p[0] * w, (p[1] + i * self.w_index) %  self.get_domain_size(i)) for (i, w) in enumerate(self.coset_gen)]
+        else:
+            return [p * w for w in self.coset_gen]
 
     def _get_level_generator(self, i):
         return self.omega ** (2 ** (self.nu * i))
@@ -132,26 +140,40 @@ class MultiplicativeDomainIerarchy(DomainIerarchy):
     #returns point (alongside with its' trapdoor information) from random bitstring
     #which should be the Python bytes types - a usual digest for different hash functions
     def from_hash(self, i, data):
-        if (self._bitlen(self.get_domain_size(i)) >= self.)
+        if self._bitlen(self.get_domain_size(i)) >= len(data) * 8:
+            raise StarkError("Provided bitstring is too short.")
 
-        level_omega = self._get_level_generator(i)
-        pass
-    
-    #here where the trapdoor information is used - returns the position of point p
-    # as it would be returned by the i-th level iterator 
-    @abstactmethod
+        idx = sum(ord(c) << (i * 8) for i, c in enumerate(data)) % self.get_domain_size(i)
+        returnself._get_level_generator((i) ** idx, idx)
+           
     def get_index(self, p, i):
-        pass
+        if not isinstance(p, tuple):
+            raise StarkError("No trapdoor information has been provided alongside the point.")
+        return p[1]
 
-    #assuming point y is in domain i >= 1, returns the list of its' preimages in domain i-1
-    #this method is not necessary for implementing the FRI-OPP protocol, 
-    # but os of certain use for debugging purposes 
-    @abstractmethod 
     def get_preimage(self, y, i):
-         p = p[0] if isinstance(p, tuple) else p
-        pass     
-        
+        y = y[0] if isinstance(y, tuple) else y
 
+        if not self.is_in_domain(y, i):
+            raise StarkError("Provided element %s is not in %d-th domain" %(y, i))
+        
+        #There is a deterministic algorithm to find n'th root of val in finite residue field,
+        #google for "An Improvement of the Cipolla-Lehmer Type Algorithms" by Namhun Koo1, et al
+        #however we just take succesive square roots
+        preimage = [y]
+        while nu != 0:
+            nu -= 1
+            roots = []
+            for v in preimage:
+                x = v.sqrt()
+                roots.extend([x, -x])
+            preimage = roots
+        return preimage
+        
+    def get_field(self):
+        return self.field
+ 
+        
 class AdditiveDomainIerarchy(DomainIerarchy):
     """
     Given linear independent spanSet [e_1, ..., e_n] computes series of subspace polynomials vanishing exactly over the subspaces
@@ -169,14 +191,14 @@ class AdditiveDomainIerarchy(DomainIerarchy):
 	If so, we simply let P_i= P_{i-1}.
 	Otherwise, we derive P_i using the formula described above.
     (This algorithm is taken from libstark implementation)
-    Note, that thus constructed subspace polynomial is linearized
+    Note, that this way constructed subspace polynomial is linearized.
     """
     @classmethod
     def _construct_successive_subspace_polys(cls, spanSet):
         #some initial checks and definitions
         assert(len(spanSet) != 0, "Spanning set of subspace is empty!")
         field = spanSet[0].__class__
-        assert(hasattr(field, "char") and field.char == 2, "Subspace polynomial creation algorithm is valid only for fields of char 2")
+        assert(hasattr(field, "char") and field.char == 2, "we work only in the fields of charactersitics 2.")
         poly_ring = LinearisedPolyRing(field)
         res = []
 
@@ -199,7 +221,7 @@ class AdditiveDomainIerarchy(DomainIerarchy):
     """
     def __init__(self, spanSet, levels, nu = 1):
         if (len(spanSet) <= levels * nu)
-            raise StarkError("Specified size is to small to construct required number of levels")
+            raise StarkError("Specified size is to small to construct required number of levels.")
         subspace_polys =  self._construct_successive_subspace_polys(spanSet)
         if subspace_polys is None:
             raise StarkError("Provided spanning set is not linear independent")

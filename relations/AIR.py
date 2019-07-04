@@ -1,5 +1,5 @@
 from algebra.polynomials import * 
-
+from utils.utils import *
 
 class AIR():
     # w - register width, T - trace length; field = used base_field
@@ -34,15 +34,13 @@ class AIR():
         assert isinstance(poly, self.poly_ring), "specifed poly doesn't belong to underlying polynomial ring"
         self.trace_constraints[i] = poly
 
-
     # check if all constraints are defined at each execution step
     def consistency_check():
         if any([ elem is None for elem in self.trace_constraints]):
             return False
         if self.witness:
-            return witness_check(self.witness)
+            return self.witness_check(self.witness)
         return True
-
     
     # check if provided witness satisfies all of the constraints
     # witness should be 2-dimensional matrix of size [T][w] 

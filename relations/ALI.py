@@ -1,4 +1,5 @@
 #we actuall implement DEEP version of ALI version here
+#we do-not implement zk
 
 class ALI:
     #here D1 and D2 should be FRI-OPP domains
