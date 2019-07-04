@@ -137,7 +137,6 @@ def polynomialsOver(domain, variable_name = 'X'):
          return ' + '.join(['%s*%s^%d' % (a, variable_name, i) if i > 0 else '%s'%a 
                               for i,a in filter(lambda (i, x): x != self.domain(0), enumerate(self.coefficients))])
              
-
       #partial evaluation of multivariate polynomials
       def evaluate(self, coeffs):
          if self.domain == self.base_field:
@@ -154,6 +153,9 @@ def polynomialsOver(domain, variable_name = 'X'):
             x = self.base_field(val)
             func = lambda (i, coeff): coeff * (x**i)
             return sum(map(func, enumerate(self)) , self.base_field(0))
+
+      def __call__(self, coeffs):
+         return self.evaluate(coeffs)
 
       @classmethod
       def from_string(cls, data):
@@ -182,3 +184,15 @@ def multiivar_polynomialsOver(domain, *variable_name_list):
    for var_name in variable_name_list:
       cur_domain = polynomialsOver(cur_domain, var_name)
    return cur_domain
+
+
+def construct_interpolation_poly(poly_ring, domain, values):
+   assert(len(domain) == len(values), "The lengths of domain and values vectors are different!")
+   assert(isinstance(values[0], poly_ring.domain), "Inconsistency of types.")
+  
+   poly = self.poly.ring.Zero()
+	for i in xrange(len(domain)):
+      pred = (lambda k : k != i)
+      prod = reduce((lambda x, j: x * (t - domain[j])/(domain[i] - domain[i]), itertools.ifilter(pred, len(domain)), self.poly.ring.Zero(1))
+      poly += values[i] * prod	
+	return poly

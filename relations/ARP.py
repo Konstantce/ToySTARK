@@ -1,3 +1,5 @@
+import itertools
+
 class APR:
     def __init__(self, istance, witness = None):
         """Instance format: The instance x is a tuple (Fq, d, C) where:
@@ -44,6 +46,7 @@ class APR:
         field = AIR.field
         W = AIR.w
         T = AIR.T
+        poly_ring = polynomialsOver(field, "X")
 
         mul_group_order = field.size() - 1
         if (mul_group_order % (W*T) != 0:
@@ -53,24 +56,17 @@ class APR:
         full_mask = [gamma ** k for k in xrange(2*W)]
         Q = [gamma ** (W*k) for k in xrange(T)]
         С = [(full_mask, P, Q) for P in AIR.trace_constraints]
-        C += [() for in boundary_contsrainys]
-        for 
+        C += [([1], X - alpha, [gamma**(i*W+j)]) for (i, j, alpha in AIR.boundary_constraints)]
+
+        #TODO: how is degree defined?
+        degree = T * w
+        instance = (field, degree, C)
 
         if AIR.witness is not None:
-
+            domain, values = zip(*[(gamma**(t*W+j), AIR.witness[j][t]) for  (t, j) in itertools.product(xrange(T), xrange(W))])
+            witness = construct_interpolation_poly(poly_ring, domain, values)
         else:
             witness = None
 
-
-        Let x = (Fq, T,w,P, C, B) 
-
-        self.w = w
-        self.T = T
-        self.field = field
-        self.boundary_constraints = []
-        self.trace_constraints = [None] * (T-1)
-        self.vars = ['X' + str(i) for i in xrange(1, w+1)] + ['Y' + str(i) for i in xrange(1, w+1)]
-        self.poly_ring = multiivar_polynomialsOver(field, *vars)
-        self.witness = None
-
+        return cls(instance, witness)
         

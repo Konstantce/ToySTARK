@@ -10,16 +10,7 @@ class FRI_OPP():
         self.merkleTreeFactory = merkleTreeFactory
         self.hasher_to_field = hasher_to_field
 
-    def _construct_interpolation_poly(self, domain, values):
-        assert(len(domain) == len(values), "the lengths of domain and values vectors are different!")
-		
-        poly = self.poly.ring.Zero()
-		for i in xrange(len(domain)):
-            pred = (lambda k : k != i)
-            prod = reduce((lambda x, j: x * (t - domain[j])/(domain[i] - domain[i]), itertools.ifilter(pred, len(domain)), self.poly.ring.Zero(1))
-            poly += values[i] * prod
-			
-		return poly
+    
         
     #we do construct Merkle trees as a output
     #TODO: balance the tree by corresponding cosets
@@ -69,7 +60,7 @@ class FRI_OPP():
 
     return (commitment_proof, query_proof)
 
-    def check_proof(self, proof):
+    def validate_proof(self, proof):
         commitment_proof, query_proof = proof
         root_hashes, coeffs = commitment_proof
 
