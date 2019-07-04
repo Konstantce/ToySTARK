@@ -2,23 +2,35 @@ from algebra.finite_field import *
 from linearized_polynomials import *
 import itertools 
 
+"""
+Here we define DomainIerarchy - crusial structure for the whole FRI-OPP protocol.
+DomainIerarchu is a seriels of subsets (we call subset D_i the i-th level of the domain_ierararchy) of some finite field F_q, posessing good algebraic structure - 
+(multiplicatibve or ) and sequence suitable surjective maps q_i from 
+Those maps q_i respect the algebraic structures of those domains in the sense, if
+"""
 
 class DomainIerarchy():
     def __init__(self):
         pass
 
+    #get the size of the i-th lebel:
     @abstractmethod     
     def get_domain_size(self, i):
         pass
 
+    #check if point p belongs to the i-th level of iera
     @abstractmethod
-    def is_in_domain(self, val, i):
+    def is_in_domain(self, p, i):
         pass
 
+    #assuming point p belongs to the i-th domain, get its image in the i+1 - domain,
+    #which is equal to q_i(p)
     @abstractmethod
     def map_to_subdomain(self, val, i):
         pass
 
+    #assuming point p belongs to the i-th domain, return the corresponding coset of this point,
+    #which are all points in the domain 
     @abstractmethod
     def get_coset(self, val, i):
         pass
@@ -26,6 +38,8 @@ class DomainIerarchy():
     @abstractmethod
     def coset_iter(self, i):
         pass
+
+    @abstractmethod get_preimage
 
 
 class MultiplicativeDomainIerarchy(DomainIerarchy):

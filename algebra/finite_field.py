@@ -1,5 +1,9 @@
 from polynomials import *
+from utils.utils import *
+from miscellaneous import *
+
 import random
+import struct
 
 
 # additionally require inverse() on subclasses
@@ -165,8 +169,13 @@ def IntegersModP(p, prim_element = None):
             return x
          else:
             raise StarkError("Unexpected error (incorrect p) in sqrt method for finite field.")
-           
 
+      @classmethod
+      def from_hash(cls, data):
+         if len(data) * 8 <= cls.p:
+                raise StarkError("Provided data has too short length.")
+         return cls(sum(ord(c) << (i * 8) for i, c in enumerate(data)))
+         
    IntegerModP.p = p
    IntegerModP.is_extension_field = False
 
@@ -289,7 +298,6 @@ def FiniteField(p, m, polynomialModulus=None, variable='t'):
          q,r = divmod(self.poly, divisor.poly)
          return (Fq(q), Fq(r))
 
-
       def inverse(self):
          if self == Fq(0):
             raise ZeroDivisionError
@@ -310,8 +318,24 @@ def FiniteField(p, m, polynomialModulus=None, variable='t'):
       def set_prim_element(cls, gen):
          cls.prim_element = cls(gen)
 
+      @classmethod
       def get_num_of_elems(cls):
          return cls.fieldSize
+
+      @classmethod
+      def from_hash(cls, data):
+         assert(cls.p == 2, "From_hash method is defined only for fields of characterisctics 2.")
+         if len(data) * 8  <= cls.extension_degree:
+            raise StarkError("Provided bitstring is too short.")
+
+         def _bitstream_iter(self, hexstring):
+            i = 0
+            while i < self.field.extension_degree:
+               yield (hexstring[i / 8] a >> (i % 8)) & 1
+               i += 1
+            return None
+         return cls([x for x in self._bitstream_iter(data)])
+
 
    Fq.__name__ = 'F_{%d^%d}' % (p,m)
    Fq.prim_elem = None

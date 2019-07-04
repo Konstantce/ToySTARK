@@ -1,11 +1,13 @@
+from utils.utils import StarkError
+
 import hashlib
 import binascii
 from itertools import zip
 from math import log
-from algebra.utils import *
+
 
 @memoize
-def MerkleTreeFactory(hash_funcion = hashlib.sha256, descendant_count = 2, leaf_encoder = None, padding = None):
+def MerkleTreeFactory(hash_funcion = hashlib.sha256, descendant_count = 2, leaf_encoder = bytearray.fromhex, padding = None):
 
     class MerkleTree():
         def __init__(self, values):
@@ -82,7 +84,7 @@ def MerkleTreeFactory(hash_funcion = hashlib.sha256, descendant_count = 2, leaf_
             elif index > len(self.leaves)-1 or index < 0:
                 raise StarkError("Provided index is out of range.")
             else:
-                initial_index = index
+                init_index = index
                 proof = []
                 for level in range(len(self.levels) - 1, 0, -1):
                     x = index % self.descendant_number
@@ -101,19 +103,26 @@ def MerkleTreeFactory(hash_funcion = hashlib.sha256, descendant_count = 2, leaf_
                     proof.append(subproof)
                     index = int(index / self.descendant_number)
 
-                assert(self.validate_proof(proof, self.encoded_leaves[initial_index], self.get_merkle_root()), "Constructed proof is incorrect!")
+                root = self.get_merkle_root()
+                assert(self.validate_proof(self.leaves[init_index], init_idex, proof, root, "Constructed proof is incorrect!")
                 return proof
 
-        def validate_proof(self, proof, target_hash, merkle_root):
+        @classmethod
+        def validate_proof(self, leaf, index, proof, merkle_root):
             if not self.__is_ready:
                 self.__make_tree()
+            targe_hash = self.leaf_encoder(leaf) if self.leaf_encoder else leaf
             merkle_root = bytearray.fromhex(merkle_root)
-            target_hash = bytearray.fromhex(target_hash)
+
             if len(proof) == 0:
                 return target_hash == merkle_root
             else:
                 running_hash = target_hash
                 for subproof in proof:
+                    if not isinstance(subproof[index % self.descendant_count], Placeholder):
+                        return False
+                    index /= self.descendant_count
+                    
                     data = b"".join([x for x in subproof if not isinstance(x, Placeholder) else running_hash])
                     running_hash = self.hash_function(data).digest()
                 return running_hash == merkle_root

@@ -1,11 +1,11 @@
 #this module comtains code for both univariate and multivariate polynomials
-
 try:
     from itertools import zip_longest
 except ImportError:
     from itertools import izip_longest as zip_longest
 
-from utils import *
+from utils.utils import *
+from miscellaneous import *
 import copy
 
 
@@ -23,7 +23,7 @@ def polynomialsOver(domain, variable_name = 'X'):
          return Polynomial([cls.domain(x) for x in L])
 
       @classmethod
-      def init_from_subdomain(cls, val, verbose = False):
+      def _init_from_subdomain(cls, val, verbose = False):
          if verbose:
             print val
          
@@ -52,12 +52,11 @@ def polynomialsOver(domain, variable_name = 'X'):
          if type(c) is Polynomial:
             self.coefficients = copy.deepcopy(c.coefficients)
          elif not isinstance(c, (list, tuple)):
-            self.coefficients = [self.init_from_subdomain(c)]
+            self.coefficients = [self._init_from_subdomain(c)]
          else:
-            self.coefficients = [self.init_from_subdomain(x) for x in c]
+            self.coefficients = [self._init_from_subdomain(x) for x in c]
 
          self.coefficients = strip(self.coefficients, self.domain(0))
-
 
       def isZero(self): return self.coefficients == []
 
@@ -84,7 +83,6 @@ def polynomialsOver(domain, variable_name = 'X'):
          newCoefficients = [sum(x) for x in zip_longest(self, other, fillvalue=self.domain(0))]
          return Polynomial(newCoefficients)
 
-
       @typecheck
       def __mul__(self, other):
          if self.isZero() or other.isZero():
@@ -98,9 +96,11 @@ def polynomialsOver(domain, variable_name = 'X'):
 
          return Polynomial(newCoeffs)
 
-
       @typecheck
       def __divmod__(self, divisor):
+         #divmod is defined only for unavariate polynomails
+         assert(self.domain == self.base_field, "Divmod is not properly defined for multivariate polynomials")
+
          quotient, remainder = Zero(), self
          divisorDeg = divisor.degree()
          divisorLC = divisor.leadingCoefficient()
@@ -115,7 +115,6 @@ def polynomialsOver(domain, variable_name = 'X'):
 
          return quotient, remainder
 
-
       @typecheck
       def __truediv__(self, divisor):
          if divisor.isZero():
@@ -128,8 +127,7 @@ def polynomialsOver(domain, variable_name = 'X'):
          if divisor.isZero():
             raise ZeroDivisionError
          return divmod(self, divisor)[1]
-
-      
+    
       def __repr__(self):
          if self.isZero():
             return '0'
@@ -163,7 +161,6 @@ def polynomialsOver(domain, variable_name = 'X'):
             return eval(data)
          except:
             raise StarkError("Unable to construct polynomial from string: " + data)
-
 
    def Zero():
       return Polynomial([0])

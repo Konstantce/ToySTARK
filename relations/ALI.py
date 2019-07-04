@@ -16,36 +16,15 @@ class ALI:
         alpha_powes = [alpha**(i+1) for xrange(constraints)]
 
         P.evaluate([f.evaluate(x*m) for m in M])
-        g = (lambda x : return sum(lambda x: alpha_powers[i] * ())
+        g = (lambda x : return sum(lambda x: alpha_powers[i] * P.evaluate([f.evaluate(x*m) for m in M]) / Q(i) for (M, P, Q) in constraints, self.field(0)))
 
         g_coomitment = self.merkleTreeFactory([g(x) for x in D2])
         z = self.field.from_hash(g_commitment.get_merkle_root())
 
-        Mz = {z·Mi
-j
-| 1 ≤ i ≤ |C| and 1 ≤ j ≤ |Mi
-|
+        M_z = [z * ]
 
- 
+        #construct U and G and send them
 
     def validate_proof():
-
-
-    def check_witness():
-        assert(self.witness is not None, "Witness is undefined at this point.")
-
-        if self.witness().degree > d:
-            return False
-        for M, P, Q in self.constraints:
-            for x in Q:
-                if P.evaluate([f.evaluate(x*m) for m in M]) != 0:
-                    return False
-
-        return True
-
-    def set_witness(witness):
-        self.witness = witness
-
-    @classmethod
-    def fromARP(cls, AIR):
+        return self
         

@@ -1,6 +1,8 @@
 from algebra.utils import *
 from algebra.linear_algebra import *
 from algebra.finite_field import *
+from utils.utils import *
+
 from math import log
 import itertools
 
@@ -11,8 +13,8 @@ and possibly, a non-zero constant coefficient."""
 
 @memoize
 def LinearisedPolyRing(field):
-    if not hasattr(field, "char") or not hasattr(field, "extension degree"):
-        raise StarkError("Linearised polynomials are defined only over Finite Fields with p^n elements for n > 1.")
+    if not hasattr(field, "char"):
+        raise StarkError("Linearised polynomials are defined only over finite fields.")
 
     class LinearisedPoly():
         def __init__(self, coeffs):
@@ -25,12 +27,13 @@ def LinearisedPolyRing(field):
 
         def evaluate(self, x):
            
-		    """we take advantage of the fact that calculation Grobenius automorphism is very efficient in GFpE,
-		        and that x^{p^i} = (x^{p^{i-1})^p. Each iteration we raise the current power
-		        of x to p_th power, multiply it by the relevant coefficient, and add to the running sum"""
+		    """ 
+            we take advantage of the fact that calculation Frobenius automorphism is very efficient in GFpE,
+		    and that x^{p^i} = (x^{p^{i-1})^p. Each iteration we raise the current power of x to p_th power,
+            multiply it by the relevant coefficient, and add to the running sum
+            """
 
             running_sum = self.field(0);
-
             for coef in self._coeffs:
                 running_sum += coef * x
                 x = pow(x, self.p)
@@ -67,7 +70,7 @@ def LinearisedPolyRing(field):
             self.reset()
 
         def _computeMatrix(self):
-            dim = self.field.extension_degree
+            dim = self.field.extension_degree if hasattr(self.field, "extension_degree") else 1
             Mat = MatrixRing(IntegersModP(self.p))
 
             if self._is_zero:
@@ -87,6 +90,7 @@ def LinearisedPolyRing(field):
             if self._matrix is None:
                 self._computeMatrix()
             return self._matrix
+            
         
 	LinearisedPoly.field = field
     LinearisedPoly.p = field.p
