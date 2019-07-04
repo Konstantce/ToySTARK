@@ -1,51 +1,78 @@
 from algebra.finite_field import *
 from linearized_polynomials import *
+
+from abc import ABCMeta, abstractmethod
 import itertools 
 
 """
 Here we define DomainIerarchy - crusial structure for the whole FRI-OPP protocol.
-DomainIerarchu is a seriels of subsets (we call subset D_i the i-th level of the domain_ierararchy) of some finite field F_q, posessing good algebraic structure - 
-(multiplicatibve or ) and sequence suitable surjective maps q_i from 
-Those maps q_i respect the algebraic structures of those domains in the sense, if
 """
 
 class DomainIerarchy():
+    __metaclass__ = ABCMeta
+
     def __init__(self):
         pass
 
-    #get the size of the i-th lebel:
+    #NB: all of domain elements work with either a point p, or a tuple (p, trapdoor)
+    #the concrete representation should be transparrent to end users
+    #TODO: may be use a special Metaclass>
+
+    #get the size of the i-th level:
     @abstractmethod     
     def get_domain_size(self, i):
         pass
 
-    #check if point p belongs to the i-th level of iera
+    #check if point p belongs to the i-th level of DomainIerarchy
     @abstractmethod
     def is_in_domain(self, p, i):
         pass
 
     #assuming point p belongs to the i-th domain, get its image in the i+1 - domain,
     #which is equal to q_i(p)
+    #NB: if p is a tuple (p, trapdoor) alsp returns a new value of trapdoor info 
     @abstractmethod
-    def map_to_subdomain(self, val, i):
+    def map_to_subdomain(self, p, i):
         pass
 
-    #assuming point p belongs to the i-th domain, return the corresponding coset of this point,
-    #which are all points in the domain 
+    #assuming point p belongs to the i-th level, return the corresponding coset of this point,
+    #in other return p=p1, p2, .., pn all points in the i-th domain which map to the same value y under q_i 
     @abstractmethod
-    def get_coset(self, val, i):
+    def get_coset(self, p, i):
         pass
 
+    #return coset iterator for the i-th domain
     @abstractmethod
-    def coset_iter(self, i):
+    def get_coset_iter(self, i):
         pass
 
-    @abstractmethod get_preimage
+    #return element interator for the i-th domain
+    @abstractmethod
+    def get_domain_iter(self, i):
+        pass
+    
+    #returns point (alongside with its' trapdoor information) from random bitstring
+    #which should be the Python bytes types - a usual digest for different hash functions
+    @abstractmethod
+    def from_hash(self, data):
+        pass
+    
+    #here where the trapdoor information is used - returns the position of point p
+    # as it would be returned by the i-th level iterator 
+    @abstactmethod
+    def get_index(self, p, i):
+        pass
+
+    #assuming point y is in domain i >= 1, returns the list of its' preimages in domain i-1
+    #this method is not necessary for implementing the FRI-OPP protocol, 
+    # but os of certain use for debugging purposes 
+    @abstractmethod 
+    def get_preimage(self, y, i):
+        pass
 
 
 class MultiplicativeDomainIerarchy(DomainIerarchy):
-    def __init__(self, field, size, levels, nu = 2):
-        if field.is_extension_field:
-            raise StarkError("Multiplicative domain can be constructed only for residue fields.")
+    def __init__(self, field, size, levels, nu = 1):
         group_order = field.get_num_of_elems() - 1
         if (group_order % size):
             raise StarkError("There is no multiplicative domain of size %d in %s.", %(size, field))
@@ -63,18 +90,21 @@ class MultiplicativeDomainIerarchy(DomainIerarchy):
         self.levels = levels
         self.nu = nu
         self.omega = omega
-   
-    def is_in_domain(self, val, i):
-        return val ** (self.size / (self.nu ** i)) == 1
 
-    def map_to_subdomain(self, val, i):
+    def get_domain_size(self, i):
+        return self.size / (self.nu ** i)
+   
+    def is_in_domain(self, p, i):
+        p = p[0] if isinstance(p, tuple) else p
+        return p ** (self.size / (self.nu ** i)) == 1
+
+    def map_to_subdomain(self, p, i):
         return val ** self.nu
 
     def get_coset(self, val):
         return [val * w for w in self.coset_gen]     
         
-    def get_domain_size(self, i):
-        return self.size / (self.nu ** i)
+    
 
     def coset_iter(self, i):
         level_omega = omega ** (self.nu ** i)

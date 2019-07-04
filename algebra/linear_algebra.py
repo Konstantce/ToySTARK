@@ -1,4 +1,5 @@
-from utils import DomainElement
+from utils import *
+
 from fractions import Fraction
 import itertools
 import copy
@@ -136,15 +137,17 @@ def MatrixRing(domain = Fraction):
     return Matrix
 
 
-"""solve quadratic system of linear eqyations
-if there is no solution - return None.
-If the system is undetermined (and hence there are more than one solutions) returns just one of them"""
+"""
+Solve quadratic system of linear equations,
+return None if the system is undetermined
+"""
 def solve_lin_system_PLU_form(P, L, U, b):
-    assert(L.get_dims()[0] == len(b), "Provided linear system is not quadratic.")
-    dim = len(b)
-    domain = b[0].__class__
-    is_residue_field = hasattr(domain, "p") and not domain.is_extension_field
-
+    assert(L.get_dims()[0] == len(b), "Dimension error.")
+    dim = len(b)   
+    if any(L[i][i] for i in xrange(dim)) or any(U[i][i] for i in xrange(dim)):
+        #system is undetermined
+        return None
+    
     #first pemute elements of B
     b = [b[i] for i in P]
     #solve Lx = b with forward propagation
@@ -155,38 +158,9 @@ def solve_lin_system_PLU_form(P, L, U, b):
         x.append(x_i)
 
     #solve Uy = x with backward propagation
-    #As it is possible to have zeroes on the main diagonal - we apply iterative method,
-    #which will work effectively only in the case of small residue finite domains and small number of diagonal zeroes
-    #If our domain is not a residue finite field - we immediately throw an exception
     y = [domain(0)] * dim
-    i = dim - 1
-    break_points = []
-    while i >= 0:
-        if U[i][i] != domain(0):
-            y[i] = (b[i] - sum([y[k] * U[i][k] for k in xrange(i+1, dim)], domain(0))) / U[i][i]
-            i -= 1
-        else:
-            eq_check = (sum([y[k] * U[i][k] for k in xrange(i+1, dim)]) == b[i])
-            if not break_points and not eq_check:
-                #no solutions
-                return None
-            if not is_residue_field:
-                raise StarkError("The system is undetermied: we unable to solbe it for now")
-            if eq_check:
-                break_points.append((i, 0))
-                y[i] = domain(0)
-                i -= 1
-            else:
-                #return to previous breakpoint
-                idx = next( (i for i in xrange(len(break_points), -1, -1) if breakoints[i][1] != domain.p-1, None)
-                if idx is None:
-                    return None
-                else:
-                    breakpoints = breakpoints[:idx+1]
-                    breakpoints[:-1][1] += 1
-                    i, val = break_points[-1]
-                    y[i] = val
-
+    for i in xrange(dim - 1, -1, -1):
+        y[i] = (b[i] - sum([y[k] * U[i][k] for k in xrange(i+1, dim)], domain(0))) / U[i][i]
     return y
                 
         
