@@ -55,7 +55,7 @@ class DomainIerarchy():
     #returns point (alongside with its' trapdoor information) from random bitstring
     #which should be the Python bytes types - a usual digest for different hash functions
     @abstractmethod
-    def from_hash(self, i, data):
+    def from_hash(self, data, i):
         pass
     
     #here where the trapdoor information is used - returns the position of point p
@@ -123,7 +123,7 @@ class MultiplicativeDomainIerarchy(DomainIerarchy):
 
     def get_coset_iter(self, i):
         level_omega = self._get_level_generator(i)
-        return (self.get_coset(level_omega ** i) for i in xrange(self.get_domain_size(i) / (2 ** self.nu)))
+        return (self.get_coset(level_omega ** j, i) for j in xrange(self.get_domain_size(i) / (2 ** self.nu)))
 
     def get_domain_iter(self, i):
         level_omega = self._get_level_generator(i)
@@ -139,12 +139,12 @@ class MultiplicativeDomainIerarchy(DomainIerarchy):
     
     #returns point (alongside with its' trapdoor information) from random bitstring
     #which should be the Python bytes types - a usual digest for different hash functions
-    def from_hash(self, i, data):
+    def from_hash(self, data, i):
         if self._bitlen(self.get_domain_size(i)) >= len(data) * 8:
             raise StarkError("Provided bitstring is too short.")
 
         idx = sum(ord(c) << (i * 8) for i, c in enumerate(data)) % self.get_domain_size(i)
-        return (self._get_level_generator((i) ** idx, idx))
+        return (self._get_level_generator(i) ** idx, idx)
            
     def get_index(self, p, i):
         if not isinstance(p, tuple):
@@ -261,7 +261,7 @@ class AdditiveDomainIerarchy(DomainIerarchy):
     def get_domain_iter(self, i):
         pass
     
-    def from_hash(self, i, data):
+    def from_hash(self, data, i):
         pass
     
     def get_index(self, p, i):       

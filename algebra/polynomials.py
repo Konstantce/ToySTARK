@@ -191,11 +191,12 @@ def construct_interpolation_poly(poly_ring, domain, values):
    assert len(domain) == len(values), "The lengths of domain and values vectors are different!"
    assert isinstance(values[0], poly_ring.domain), "Inconsistency of types."
   
-   poly = poly_ring.Zero()
+   poly = poly_ring(0)
+   t = poly_ring([0, 1])
    for i in xrange(len(domain)):
       pred = (lambda k : k != i)
-      func = (lambda x, j: x * (t - domain[j])/(domain[i] - domain[i]))
-      prod = reduce(func, itertools.ifilter(pred, len(domain)), poly_ring(1))
+      func = (lambda x, j: x * (t - domain[i])/(domain[j] - domain[i]))
+      prod = reduce(func, ifilter(pred, xrange(len(domain))), poly_ring(1))
       poly += values[i] * prod	
 
    return poly

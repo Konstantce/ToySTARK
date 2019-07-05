@@ -68,7 +68,7 @@ def IntegersModP(p, prim_element = None):
          x,y,d = extendedEuclideanAlgorithm(self.n, self.p)
 
          if d != 1:
-            raise Exception("Error: p is not prime in %s!" % (self.__name__))
+            raise Exception("Error: %d is not prime in %s!" % (self.n, self.__class__.__name__))
 
          return IntegerModP(x)
 

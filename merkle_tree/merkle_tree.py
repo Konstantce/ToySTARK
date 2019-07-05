@@ -46,7 +46,6 @@ def MerkleTreeFactory(hash_function = PoseidonHash, descendant_count = 4, leaf_e
             if self.padding is not None:
                 self.leaves += [self.padding] * (padded_list_count - len(self.leaves))
                 if self.leaf_encoder:
-                    print (padded_list_count - len(self.encoded_leaves))
                     self.encoded_leaves += [leaf_encoder(self.padding)] * (padded_list_count - len(self.encoded_leaves)) 
 
         @classmethod
@@ -80,11 +79,10 @@ def MerkleTreeFactory(hash_function = PoseidonHash, descendant_count = 4, leaf_e
             self.__is_ready = True
 
         def get_merkle_root(self):
-            if self.__is_ready:
-                if self.levels is not None:
-                    return raw2hex(self.levels[0][0])
-                else:
-                    return None
+            if not self.__is_ready:
+                self.__make_tree()
+            if self.levels is not None:
+                return raw2hex(self.levels[0][0])
             else:
                 return None
 
@@ -116,13 +114,12 @@ def MerkleTreeFactory(hash_function = PoseidonHash, descendant_count = 4, leaf_e
                     index = int(index / self.descendant_count)
 
                 root = self.get_merkle_root()
-                print proof
                 assert self.validate_proof(self.leaves[init_index], init_index, proof, root), "Constructed merkle proof is incorrect!"
                 return proof
 
         @classmethod
         def validate_proof(cls, leaf, index, proof, merkle_root):
-            target_hash = cls.leaf_encoder(leaf) if cls.leaf_encoder else leaf
+            target_hash = leaf_encoder(leaf) if cls.leaf_encoder else leaf
             merkle_root = hex2row(merkle_root)
 
             if len(proof) == 0:
@@ -131,7 +128,6 @@ def MerkleTreeFactory(hash_function = PoseidonHash, descendant_count = 4, leaf_e
                 running_hash = target_hash
                 for subproof in proof:
                     if not isinstance(subproof[index % cls.descendant_count], utils.Placeholder):
-                        print "Here!"
                         return False
                     index /= cls.descendant_count
                     

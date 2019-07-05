@@ -30,10 +30,10 @@ class FRI_OPP():
             f_new = {}
             for coset in self.domain_ierarchy.get_coset_iter(i):
                 values = [f(x) for x in coset]
-                Lagrange_poly = construct_interpolation_poly(self.field, coset, values)
-                y = self.domain_ierarchy.domain.map_to_subdomain(coset[0], i)
+                Lagrange_poly = construct_interpolation_poly(self.poly_ring, coset, values)
+                y = self.domain_ierarchy.map_to_subdomain(coset[0], i)
                 f_new[y] = Lagrange_poly.evaluate(sample_point)
-            f = PolyProxy(f_new)
+            f = PolyProxy(self.poly_ring, f_new)
 
         #for final step - just return the coefficients of the last polynomial f_n
         coeffs = f.get_coefficients()
@@ -41,14 +41,15 @@ class FRI_OPP():
 
         #from now emulate query phase
         coeffs_tree = self.merkle_tree(coeffs)
-        s = self.domain_ierarchy.from_hash(coeffs_tree.get_merkle_root())
+        s = self.domain_ierarchy.from_hash(coeffs_tree.get_merkle_root(), 0)
         query_proof = []
 
-        for i in self.domain_ierarchy.levels:
+        for i in xrange(self.domain_ierarchy.levels):
+            print s
             coset_indices = [self.domain_ierarchy.get_index(p, i) for p in self.domain_ierarchy.get_coset(s, i)]
             level_query = [(f_commitments[i].get_leaf(idx), f_commitments[i].get_proof(idx)) for idx in coset_indices]
             query_proof.append(level_query)
-            s = self.domain_ierarchy.map_to_subdomain(s)
+            s = self.domain_ierarchy.map_to_subdomain(s, i)
 
         return (commitment_proof, query_proof)
 
@@ -57,7 +58,7 @@ class FRI_OPP():
         root_hashes, f_last_coeffs = commitment_proof
 
         coeffs_tree = self.merkle_tree(f_last_coeffs)
-        s = self.domain_ierarchy.from_hash(coeffs_tree.get_merkle_root())
+        s = self.domain_ierarchy.from_hash(coeffs_tree.get_merkle_root(), 0)
 
         for i in xrange(self.domain_ierarchy.levels - 1):
             coset = self.domain_ierarchy.get_coset(s, i)
@@ -67,7 +68,7 @@ class FRI_OPP():
                     return False
 
             #perform "round consistency" check
-            interpolant = construct_interpolation_poly(self.field, coset, [x for (x, y) in query_proof[i]])
+            interpolant = construct_interpolation_poly(self.poly_ring, coset, [x for (x, y) in query_proof[i]])
             sample_point = self.field.from_hash(root_hashes[i])
 
             if i != self.domain_ierarchy.levels - 2:

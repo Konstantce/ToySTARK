@@ -22,7 +22,9 @@ def residue_field_hasher(x):
 
 tree_constructor = MerkleTreeFactory(leaf_encoder = residue_field_hasher, padding = Fp(0))
 
-tree = tree_constructor([Fp(0), Fp(1), Fp(2), Fp(3))
+tree = tree_constructor([Fp(0), Fp(1), Fp(2), Fp(3)])
+print tree.get_proof(2)
+print tree.get_merkle_root()
 
 from FRI.domain_ierarchy import *
 from FRI.fri_opp import *
