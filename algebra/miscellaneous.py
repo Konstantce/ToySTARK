@@ -13,7 +13,7 @@ class DomainElement(object):
 
    # square-and-multiply algorithm for fast exponentiation
    def __pow__(self, n):
-      if type(n) is not int:
+      if not isinstance(n, (int, long)):
          raise TypeError
 
       Q = self
@@ -121,7 +121,7 @@ def is_prime(p):
 def jacobi(a, n):
    #calculate the Jacobi symbol (a, n) with n odd.
    #The result is either -1, 0 or 1
-   assert(n % 2, ("%d is not odd: unable to compute Jacobi symbol" %n))
+   assert n % 2, "%d is not odd: unable to compute Jacobi symbol" %n
 
    t = 1
    a %= n

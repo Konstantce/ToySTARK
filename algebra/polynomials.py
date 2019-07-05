@@ -195,7 +195,7 @@ def construct_interpolation_poly(poly_ring, domain, values):
    t = poly_ring([0, 1])
    for i in xrange(len(domain)):
       pred = (lambda k : k != i)
-      func = (lambda x, j: x * (t - domain[i])/(domain[j] - domain[i]))
+      func = (lambda x, j: x * (t - domain[j])/(domain[i] - domain[j]))
       prod = reduce(func, ifilter(pred, xrange(len(domain))), poly_ring(1))
       poly += values[i] * prod	
 

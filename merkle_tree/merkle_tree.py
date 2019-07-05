@@ -9,7 +9,7 @@ from math import log
 
 
 @utils.memoize
-def MerkleTreeFactory(hash_function = PoseidonHash, descendant_count = 4, leaf_encoder = binascii.unhexlify, padding = None):
+def MerkleTreeFactory(hash_function = hashlib.sha256, descendant_count = 4, leaf_encoder = binascii.unhexlify, padding = None):
 
     def grouper(iterable, n):
         it = iter(iterable)
@@ -24,13 +24,15 @@ def MerkleTreeFactory(hash_function = PoseidonHash, descendant_count = 4, leaf_e
 
     def hex2row(x):
         return binascii.unhexlify(x)
+
+    def leaf_encoder_hasher(x):
+        return hash_function(x).digest() if leaf_encoder is None else hash_function(leaf_encoder(x)).digest()
     
     class MerkleTree():
         def __init__(self, values):
             self.__is_ready = False
-            self.leaves = list()
-            self.encoded_leaves = list() if self.leaf_encoder else self.leaves
             self.levels = None
+
             # check if single leaf
             if not isinstance(values, tuple) and not isinstance(values, list):
                 values = [values]
@@ -38,19 +40,17 @@ def MerkleTreeFactory(hash_function = PoseidonHash, descendant_count = 4, leaf_e
             if self.padding is None and padded_list_count != len(values):
                 raise utils.StarkError("Impossible to construct Merkle tree: number of leaves is not a power of descendant_count")
 
-            for v in values:
-                self.leaves.append(v)
-                if self.leaf_encoder:
-                    self.encoded_leaves.append(leaf_encoder(v))
-
+            self.leaves = values
+            self.hashed_leaves = [leaf_encoder_hasher(v) for v in values]
+           
             if self.padding is not None:
-                self.leaves += [self.padding] * (padded_list_count - len(self.leaves))
-                if self.leaf_encoder:
-                    self.encoded_leaves += [leaf_encoder(self.padding)] * (padded_list_count - len(self.encoded_leaves)) 
+                padding_len = padded_list_count - len(self.leaves)
+                self.leaves += [self.padding] * padding_len 
+                self.hashed_leaves += [leaf_encoder_hasher(self.padding)] * padding_len
 
         @classmethod
         def _get_padded_leaves_count(cls, num):
-            n = int(log(num, cls.descendant_count))
+            n = int(round(log(num, cls.descendant_count)))
             probe = cls.descendant_count ** n
             return probe if probe == num else probe * cls.descendant_count
             
@@ -73,7 +73,7 @@ def MerkleTreeFactory(hash_function = PoseidonHash, descendant_count = 4, leaf_e
         def __make_tree(self):
             self.__is_ready = False
             if self.get_leaf_count() > 0:
-                self.levels = [self.encoded_leaves, ]
+                self.levels = [self.hashed_leaves, ]
                 while len(self.levels[0]) > 1:
                     self.__calculate_next_level()
             self.__is_ready = True
@@ -119,7 +119,7 @@ def MerkleTreeFactory(hash_function = PoseidonHash, descendant_count = 4, leaf_e
 
         @classmethod
         def validate_proof(cls, leaf, index, proof, merkle_root):
-            target_hash = leaf_encoder(leaf) if cls.leaf_encoder else leaf
+            target_hash = leaf_encoder_hasher(leaf)
             merkle_root = hex2row(merkle_root)
 
             if len(proof) == 0:
@@ -138,7 +138,7 @@ def MerkleTreeFactory(hash_function = PoseidonHash, descendant_count = 4, leaf_e
 
     MerkleTree.hash_function = hash_function
     MerkleTree.descendant_count = descendant_count 
-    MerkleTree.leaf_encoder = leaf_encoder 
+    MerkleTree.leaf_encoder_hasher = leaf_encoder_hasher 
     MerkleTree.padding = padding
 
     return MerkleTree

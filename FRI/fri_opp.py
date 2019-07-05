@@ -44,8 +44,7 @@ class FRI_OPP():
         s = self.domain_ierarchy.from_hash(coeffs_tree.get_merkle_root(), 0)
         query_proof = []
 
-        for i in xrange(self.domain_ierarchy.levels):
-            print s
+        for i in xrange(self.domain_ierarchy.levels - 1):
             coset_indices = [self.domain_ierarchy.get_index(p, i) for p in self.domain_ierarchy.get_coset(s, i)]
             level_query = [(f_commitments[i].get_leaf(idx), f_commitments[i].get_proof(idx)) for idx in coset_indices]
             query_proof.append(level_query)
@@ -68,7 +67,8 @@ class FRI_OPP():
                     return False
 
             #perform "round consistency" check
-            interpolant = construct_interpolation_poly(self.poly_ring, coset, [x for (x, y) in query_proof[i]])
+            interpolant = construct_interpolation_poly(self.poly_ring, [x for (x, y) in coset], [x for (x, y) in query_proof[i]])
+            print interpolant
             sample_point = self.field.from_hash(root_hashes[i])
 
             if i != self.domain_ierarchy.levels - 2:
@@ -78,9 +78,11 @@ class FRI_OPP():
                 f_last = self.poly_ring(f_last_coeffs)
                 s = self.domain_ierarchy.map_to_subdomain(s, i)
                 y = f_last.evaluate(s)
-
+            print "check iter: ", i
             if  y != interpolant.evaluate(sample_point):
-                    return False
+                print y, interpolant.evaluate(sample_point)
+                print "rounf check"
+                return False
         
         return True
 

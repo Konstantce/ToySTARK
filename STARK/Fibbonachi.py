@@ -6,7 +6,7 @@ sys.path.append( path.dirname( path.dirname( path.abspath(__file__) ) ) )
 from algebra.finite_field import *
 
 p = 17
-Fp = FiniteField(17, 1)
+Fp = IntegersModP(p, 3)
 
 #import merklee tree
 from merkle_tree.merkle_tree import *
@@ -22,10 +22,6 @@ def residue_field_hasher(x):
 
 tree_constructor = MerkleTreeFactory(leaf_encoder = residue_field_hasher, padding = Fp(0))
 
-tree = tree_constructor([Fp(0), Fp(1), Fp(2), Fp(3)])
-print tree.get_proof(2)
-print tree.get_merkle_root()
-
 from FRI.domain_ierarchy import *
 from FRI.fri_opp import *
 
@@ -36,9 +32,10 @@ from algebra.polynomials import *
 
 poly_ring = multiivar_polynomialsOver(Fp, 'X')
 
-f = poly_ring.from_string("X**2+1")
+f = poly_ring.from_string("X**2")
 
-fri.generate_proof(f)
+proof = fri.generate_proof(f)
+fri.validate_proof(proof)
 
 
 

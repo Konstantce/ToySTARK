@@ -108,13 +108,14 @@ class MultiplicativeDomainIerarchy(DomainIerarchy):
 
     def map_to_subdomain(self, p, i):
         if isinstance(p, tuple):
-            return (p[0] ** (2 ** self.nu), (p[1] * (2 ** self.nu)) % self.get_domain_size(i+1))
+            return (p[0] ** (2 ** self.nu), p[1]  % self.get_domain_size(i+1))
         else:
             return p ** (2 ** self.nu)
 
     def get_coset(self, p, i):
         if isinstance(p, tuple):
-            return [(p[0] * w, (p[1] + i * self.w_index) %  self.get_domain_size(i)) for (i, w) in enumerate(self.coset_gen)]
+            domain_size = self.get_domain_size(i)
+            return [(p[0] * w, (p[1] + i * domain_size / (2 ** self.nu)) %  domain_size) for (i, w) in enumerate(self.coset_gen)]
         else:
             return [p * w for w in self.coset_gen]
 
