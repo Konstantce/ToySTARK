@@ -1,8 +1,8 @@
-import poseidon_params
+import poseidon_params as params
 
 class PoseidonHash():
-    @staticmethod
-    def poseidon_mimc(input):
+    @classmethod
+    def poseidon_mimc(cls, input):
         assert(len(input) == params.t)
         state = input
         round = 0
@@ -17,7 +17,7 @@ class PoseidonHash():
             new_state = [int(0)]*params.t
             for i in range(0, params.t):
                 msd_row = params.msd[i*params.t:(i+1)*params.t]
-                new_state[i] = scalar_product(state, msd_row)
+                new_state[i] = cls.scalar_product(state, msd_row)
 
             state = new_state
             round += 1
@@ -31,7 +31,7 @@ class PoseidonHash():
             
             new_state = [int(0)]*params.t
             for i in range(0, params.t):
-                new_state[i] = scalar_product(state, params.msd[i*params.t:(i+1)*params.t])
+                new_state[i] = cls.scalar_product(state, params.msd[i*params.t:(i+1)*params.t])
 
             state = new_state
             round += 1
@@ -44,7 +44,7 @@ class PoseidonHash():
             
             new_state = [int(0)]*params.t
             for i in range(0, params.t):
-                new_state[i] = scalar_product(state, params.msd[i*params.t:(i+1)*params.t])
+                new_state[i] = cls.scalar_product(state, params.msd[i*params.t:(i+1)*params.t])
 
             state = new_state
             round += 1
@@ -57,16 +57,15 @@ class PoseidonHash():
         
         return state
 
-    @staticmethod   
-    def scalar_product(a, b):
+    @classmethod   
+    def scalar_product(cls, a, b):
         assert(len(a) == len(b))
         c = int(0)
         for i in range(0, len(a)):
             c += (a[i] * b[i]) % params.modulus
         return c % params.modulus
 
-
-    def __init__(input):
+    def __init__(self, input):
         input = [ord(x) for x in input]
         num_cycles = len(input) # params.absorbtion_round_len
         if len(input) % params.absorbtion_round_len != 0:
@@ -75,13 +74,13 @@ class PoseidonHash():
             input.append(int(0))
         
         state = [int(0)]*params.t
-        state = poseidon_mimc(state)
+        state = self.poseidon_mimc(state)
 
         for i in range(0, num_cycles):
             to_absorb = input[params.absorbtion_round_len*i:params.absorbtion_round_len*(i+1)]
             for k in range(0, params.absorbtion_round_len):
                 state[k] = (state[k] + to_absorb[k]) % params.modulus
-            state = poseidon_mimc(state)
+            state = self.poseidon_mimc(state)
         
         self._data =  bytes(state[:params.output_len])
 
@@ -90,7 +89,7 @@ class PoseidonHash():
     
 
 if __name__ == "__main__":
-    input = [int(0)]*params.absorbtion_round_len
-    output = poseidon_hash(input)
+    input = [int(0)] * params.absorbtion_round_len
+    output = PoseidonHash(input).digest()
     hex_string = '0x{:02x}'.format(output[0])
     print(hex_string)

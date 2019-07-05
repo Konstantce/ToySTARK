@@ -1,4 +1,4 @@
-from utils import *
+from utils.utils import *
 
 from fractions import Fraction
 import itertools
@@ -21,7 +21,7 @@ def MatrixRing(domain = Fraction):
             mat = cls(None)           
             mat.x_dim = x_dim
             mat.y_dim = y_dim
-            mat.data = [[self.domain(0)] * y_dim] * x_dim]
+            mat.data = [[self.domain(0)] * y_dim] * x_dim
             return mat
 
         def __getitem__(self, index):
@@ -69,7 +69,7 @@ def MatrixRing(domain = Fraction):
             return not self.__eq__(other)
 
         def __str__(self):
-            return '\n'.join([''.join(['{:4}'.format(item) for item in row]) for row in self.data]))
+            return '\n'.join([''.join(['{:4}'.format(item) for item in row]) for row in self.data])
 
         def det(self):
             assert(self.x_dim == self.y_dim, "Determinant is defined only for square matrices.")
@@ -111,7 +111,7 @@ def MatrixRing(domain = Fraction):
                         perms.append((j, idx))
                         for k in xrange(j, dim):
                             U[j][k], U[idx][k] = U[idx][k], U[j][k]
-                        for k in xrange(j)
+                        for k in xrange(j):
                             L[j][k], L[idx][k] = L[idx][k], L[j][k]
 
                 #main reduction step

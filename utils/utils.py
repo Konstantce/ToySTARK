@@ -10,11 +10,10 @@ class Placeholder():
    def init(self):
       pass
    def __repr__(self):
-      return [ k for k,v in locals().iteritems() if v == self][0]
+      return '***'
 
 global p_
 p_ = Placeholder()
-
 
 # memoize calls to the class constructors for fields
 # this helps typechecking by never creating two separate

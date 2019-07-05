@@ -86,23 +86,23 @@ def IntegersModP(p, prim_element = None):
 
       @classmethod
       def get_prim_element(cls):
-         if cls.prim_element is None:
+         if cls.prim_elem is None:
             cls.set_prim_element()
-         return cls.prim_element
+         return cls.prim_elem
             
       @classmethod
       def _check_if_prim_elem(cls, val):
          if cls.p == 2:
             return val == 1
          else:
-            test_degree = (self.p - 1) / 2
+            test_degree = (cls.p - 1) / 2
             return cls(val)**test_degree == -1
 
       @classmethod
       def set_prim_element(cls, gen = None):
          if gen is not None:
             if cls._check_if_prim_elem(gen):
-               cls.prim_element = cls(gen)
+               cls.prim_elem = cls(gen)
             else:
                raise StarkError("Provided element %d is not a primitive root for Z/%d." % (gen, p))
          else:
@@ -110,7 +110,7 @@ def IntegersModP(p, prim_element = None):
             v = cls(random.randrange(cls.p))
             while not cls._check_if_prim_elem(v):
                v = cls(random.randrange(cls.p))
-            cls.prim_element = cls(v)
+            cls.prim_elem = cls(v)
 
       @classmethod
       def get_num_of_elems(cls):
@@ -132,7 +132,7 @@ def IntegersModP(p, prim_element = None):
 
       def sqrt(self):
          if not self.has_sqrt():
-            raise StarkError("%s doesnt posess a square root in %s.", (self, self.__class__))    
+            raise StarkError("%s doesnt posess a square root in %s." %(self, self.__class__))    
          if self.p == 2:
             return IntegerModP(self.n)
          elif self.p % 4 == 3:
@@ -159,7 +159,7 @@ def IntegersModP(p, prim_element = None):
                m = 1
                while (b ** (2** m) != 1):
                   m += 1
-               assert (1 <= m <= r - 1, "Unexpected error (incorrect m) in sqrt method for finite field.")
+               assert 1 <= m <= r - 1, "Unexpected error (incorrect m) in sqrt method for finite field."
                l = y ** (2 ** (r - m -1))
                y = l * l
                r = m
@@ -324,17 +324,18 @@ def FiniteField(p, m, polynomialModulus=None, variable='t'):
 
       @classmethod
       def from_hash(cls, data):
-         assert(cls.p == 2, "From_hash method is defined only for fields of characterisctics 2.")
+         assert cls.p == 2, "From_hash method is defined only for fields of characterisctics 2."
          if len(data) * 8  <= cls.extension_degree:
             raise StarkError("Provided bitstring is too short.")
 
-         def _bitstream_iter(self, hexstring):
+         def bitstream_iter(hexstring):
             i = 0
             while i < self.field.extension_degree:
-               yield (hexstring[i / 8] a >> (i % 8)) & 1
+               yield (hexstring[i / 8] >> (i % 8)) & 1
                i += 1
-            return None
-         return cls([x for x in self._bitstream_iter(data)])
+            return
+
+         return cls([x for x in bitstream_iter(data)])
 
 
    Fq.__name__ = 'F_{%d^%d}' % (p,m)

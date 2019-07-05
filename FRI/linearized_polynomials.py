@@ -1,4 +1,3 @@
-from algebra.utils import *
 from algebra.linear_algebra import *
 from algebra.finite_field import *
 from utils.utils import *
@@ -26,14 +25,11 @@ def LinearisedPolyRing(field):
             self._is_zero = (len(self._coeffs) == 0)
 
         def evaluate(self, x):
-           
-		    """ 
-            we take advantage of the fact that calculation Frobenius automorphism is very efficient in GFpE,
-		    and that x^{p^i} = (x^{p^{i-1})^p. Each iteration we raise the current power of x to p_th power,
-            multiply it by the relevant coefficient, and add to the running sum
-            """
+            #we take advantage of the fact that calculation Frobenius automorphism is very efficient in GFpE,
+		    #and that x^{p^i} = (x^{p^{i-1})^p. Each iteration we raise the current power of x to p_th power,
+            #multiply it by the relevant coefficient, and add to the running sum.
 
-            running_sum = self.field(0);
+            running_sum = self.field(0)
             for coef in self._coeffs:
                 running_sum += coef * x
                 x = pow(x, self.p)

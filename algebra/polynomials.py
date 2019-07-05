@@ -4,6 +4,7 @@ try:
 except ImportError:
     from itertools import izip_longest as zip_longest
 
+from itertools import ifilter
 from utils.utils import *
 from miscellaneous import *
 import copy
@@ -99,7 +100,7 @@ def polynomialsOver(domain, variable_name = 'X'):
       @typecheck
       def __divmod__(self, divisor):
          #divmod is defined only for unavariate polynomails
-         assert(self.domain == self.base_field, "Divmod is not properly defined for multivariate polynomials")
+         assert self.domain == self.base_field, "Divmod is not properly defined for multivariate polynomials"
 
          quotient, remainder = Zero(), self
          divisorDeg = divisor.degree()
@@ -136,14 +137,17 @@ def polynomialsOver(domain, variable_name = 'X'):
                               for i,a in filter(lambda (i, x): x != self.domain(0), enumerate(self.coefficients))])
              
       #partial evaluation of multivariate polynomials
-      def evaluate(self, coeffs):
+      def evaluate(self, points):
+         if not hasattr(points, '__iter__'):
+            points = [points]
+         
          if self.domain == self.base_field:
-            if len(coeffs) != 1:
+            if len(points) != 1:
                   raise StarkError("Coeffs len for evaluation is of inproper length")
-            val = coeffs[0]
+            val = points[0]
          else:
-            self.coefficients = [self.domain.evaluate(x, coeffs[:-1]) for x in self]
-            val = coeffs[-1]
+            self.coefficients = [self.domain.evaluate(x, points[:-1]) for x in self]
+            val = points[-1]
 
          if isinstance(val, Placeholder):
             return self
@@ -184,13 +188,38 @@ def multiivar_polynomialsOver(domain, *variable_name_list):
 
 
 def construct_interpolation_poly(poly_ring, domain, values):
-   assert(len(domain) == len(values), "The lengths of domain and values vectors are different!")
-   assert(isinstance(values[0], poly_ring.domain), "Inconsistency of types.")
+   assert len(domain) == len(values), "The lengths of domain and values vectors are different!"
+   assert isinstance(values[0], poly_ring.domain), "Inconsistency of types."
   
-   poly = self.poly.ring.Zero()
-	for i in xrange(len(domain)):
+   poly = poly_ring.Zero()
+   for i in xrange(len(domain)):
       pred = (lambda k : k != i)
-      prod = reduce((lambda x, j: x * (t - domain[j])/(domain[i] - domain[i]), itertools.ifilter(pred, len(domain)), self.poly.ring.Zero(1))
+      func = (lambda x, j: x * (t - domain[j])/(domain[i] - domain[i]))
+      prod = reduce(func, itertools.ifilter(pred, len(domain)), poly_ring(1))
       poly += values[i] * prod	
-	return poly
+
+   return poly
+
+
+class PolyProxy():
+   def __init__(self, poly_ring, data):
+      self.as_func, self.as_table = (None, data) if isinstance(data, dict) else (data, {})
+      self.poly_ring = poly_ring
+
+   def _interpolate_from_table(self):
+      domain, values = zip(*self.as_table.items())
+      self.as_func = construct_interpolation_poly(self.poly_ring, domain, values) 
+         
+   def __call__(self, x):
+      if x in self.as_table:
+         return self.as_table[x]
+      else:
+         if self.as_func is None:
+            self._interpolate_from_table()         
+         return self.as_func.evaluate(x)
+            
+   def get_coefficients(self):
+      if self.as_func is None:
+         self._interpolate_from_table()  
+      return self.as_func.coefficients  
 
