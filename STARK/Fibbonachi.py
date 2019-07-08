@@ -35,7 +35,7 @@ poly_ring = multiivar_polynomialsOver(Fp, 'X')
 f = poly_ring.from_string("X**2")
 
 proof = fri.generate_proof(f)
-fri.validate_proof(proof)
+print fri.validate_proof(proof)
 
 
 

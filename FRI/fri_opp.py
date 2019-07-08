@@ -66,22 +66,19 @@ class FRI_OPP():
                 if not self.merkle_tree.validate_proof(leaf, idx, proof, root_hashes[i]):
                     return False
 
-            #perform "round consistency" check
+            #perform "round consistency" checkc
             interpolant = construct_interpolation_poly(self.poly_ring, [x for (x, y) in coset], [x for (x, y) in query_proof[i]])
-            print interpolant
             sample_point = self.field.from_hash(root_hashes[i])
+            s = self.domain_ierarchy.map_to_subdomain(s, i)
 
             if i != self.domain_ierarchy.levels - 2:
                 y, _ = query_proof[i+1][0]              
             else:
                 #last round
                 f_last = self.poly_ring(f_last_coeffs)
-                s = self.domain_ierarchy.map_to_subdomain(s, i)
-                y = f_last.evaluate(s)
-            print "check iter: ", i
+                y = f_last.evaluate(s[0])
             if  y != interpolant.evaluate(sample_point):
                 print y, interpolant.evaluate(sample_point)
-                print "rounf check"
                 return False
         
         return True
