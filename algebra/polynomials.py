@@ -50,6 +50,7 @@ def polynomialsOver(domain, variable_name = 'X'):
          return val
 
       def __init__(self, c):
+         #TODO: fix when initing from polynomials on subdomains
          if type(c) is Polynomial:
             self.coefficients = copy.deepcopy(c.coefficients)
          elif not isinstance(c, (list, tuple)):
@@ -135,11 +136,12 @@ def polynomialsOver(domain, variable_name = 'X'):
 
          return ' + '.join(['%s*%s^%d' % (a, variable_name, i) if i > 0 else '%s'%a 
                               for i,a in filter(lambda (i, x): x != self.domain(0), enumerate(self.coefficients))])
+      
              
       #partial evaluation of multivariate polynomials
       def evaluate(self, points):
          if not hasattr(points, '__iter__'):
-            points = [points]
+                points = [points]
          
          if self.domain == self.base_field:
             if len(points) != 1:

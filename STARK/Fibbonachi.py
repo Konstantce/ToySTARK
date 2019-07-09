@@ -37,6 +37,35 @@ f = poly_ring.from_string("X**2")
 proof = fri.generate_proof(f)
 print fri.validate_proof(proof)
 
+from relations import AIR
+
+num_registers = 2
+num_steps = 4
+air = AIR.AIR(num_registers, num_steps, Fp)
+air.add_boundary_constraint(0, 0, Fp(1))
+air.add_boundary_constraint(0, 1, Fp(1))
+air.add_boundary_constraint(3, 1, Fp(5))
+witness = [
+    [Fp(1), Fp(1)],
+    [Fp(1), Fp(2)],
+    [Fp(2), Fp(3)],
+    [Fp(3), Fp(5)],
+]
+c0 = air.poly_ring.from_string("0*Y2 + Y1 - X2")
+c1 = air.poly_ring.from_string("Y2 - X1 - X2")
+
+air.add_trace_constraint(c0)
+air.add_trace_constraint(c1)
+air.set_circuit((lambda x, y: x & y))
+
+air.set_witness(witness)
+print air.consistency_check()
+
+from relations.ARP import *
+
+arp = ARP.fromAIR(air)
+
+
 
 
 
