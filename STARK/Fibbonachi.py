@@ -67,7 +67,13 @@ arp = ARP.fromAIR(air)
 print arp.check_witness()
 
 g = poly_ring.from_string("X+1")
-print g.substitute([f])
+
+
+mult_var_poly = multiivar_polynomialsOver(Fp, "X", "Y", "Z")
+
+h = mult_var_poly.from_string("X*Y + Z")
+print h.substitute([f, g, f])
+
 
 
 
