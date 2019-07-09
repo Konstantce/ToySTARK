@@ -139,9 +139,11 @@ def polynomialsOver(domain, variable_name = 'X'):
       
              
       #partial evaluation of multivariate polynomials
+      #TODO: make it without use of deepcopy
+      #TODO: there is a mistake when polynomial is actually defined over subdomain
       def evaluate(self, points):
          if not hasattr(points, '__iter__'):
-                points = [points]
+            points = [points]
          
          if self.domain == self.base_field:
             if len(points) != 1:
@@ -157,6 +159,27 @@ def polynomialsOver(domain, variable_name = 'X'):
             x = self.base_field(val)
             func = lambda (i, coeff): coeff * (x**i)
             return sum(map(func, enumerate(self)) , self.base_field(0))
+
+      @classmethod
+      def substitute_impl(cls, coefs, replacements):
+         if cls.domain == cls.base_field:
+            if len(replacements) != 1:
+               raise StarkError("substitution: coeffs len for evaluation is of inproper length.")
+            val = replacements[0]
+         else:
+            coefs = [cls.domain.substitute_impl(x, replacements[:-1]) for x in coefs]
+            val = replacements[-1]
+
+         func = lambda (i, coeff): coeff * (val**i)
+         return sum(map(func, enumerate(coefs)) , 0)
+                        
+      def substitute(self, replacements):
+         if not hasattr(replacements, '__iter__'):
+            replacements = [replacements]
+
+         return self.substitute_impl(copy.deepcopy(self.coefficients), replacements)
+         
+             
 
       def __call__(self, coeffs):
          return self.evaluate(coeffs)

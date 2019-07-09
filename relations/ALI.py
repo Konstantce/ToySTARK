@@ -16,6 +16,8 @@ class ALI:
         constraints = len(self.ARP_instance.C)
         alpha_powes = [alpha**(i+1) for xrange(constraints)]
 
+        tree = self.merkle_tree(leaves)
+
         P.evaluate([f.evaluate(x*m) for m in M])
         g = (lambda x : return sum(lambda x: alpha_powers[i] * P.evaluate([f.evaluate(x*m) for m in M]) / Q(i) for (M, P, Q) in constraints, self.field(0)))
 

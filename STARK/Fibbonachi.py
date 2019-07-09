@@ -64,6 +64,10 @@ print air.consistency_check()
 from relations.ARP import *
 
 arp = ARP.fromAIR(air)
+print arp.check_witness()
+
+g = poly_ring.from_string("X+1")
+print g.substitute([f])
 
 
 

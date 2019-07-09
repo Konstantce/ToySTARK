@@ -33,12 +33,12 @@ class ARP:
         #copy witness for now
         import copy
         witness = copy.deepcopy(self.witness)
-
         if witness.degree() > self.degree:
             return False
         for M, P, Q in self.constraints:
             for x in Q:
-                if P.evaluate([witness.evaluate(x*m) for m in M]) != 0:
+                P_copy = copy.deepcopy(P)
+                if P_copy.evaluate([witness.evaluate(x*m) for m in M]) != 0:
                     return False
 
         return True
@@ -60,7 +60,7 @@ class ARP:
 
         gamma = field.get_prim_element() ** (mul_group_order / (W*T))
         full_mask = [gamma ** k for k in xrange(2*W)]
-        Q = [gamma ** (W*k) for k in xrange(T)]
+        Q = [gamma ** (W*k) for k in xrange(T-1)]
         C = [(full_mask, P, Q) for P in AIR.trace_constraints]
         C += [([1], X - alpha, [gamma**(i*W+j)]) for (i, j, alpha) in AIR.boundary_constraints]
 
