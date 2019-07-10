@@ -87,7 +87,7 @@ class ALI:
             A_copy = copy.deepcopy(A)
             B_copy = copy.deepcopy(B)
             
-            if h_leaf * B.evaluate(x) != f_leaf - A.evaluate():
+            if h_leaf * B_copy(x) != f_leaf - A_copy():
                 return False
         return True
 
@@ -111,16 +111,24 @@ class ALI:
         Z = reduce((lambda x, y: x * (self.X - y), M_z, 1))
         U = construct_interpolation_poly(self.poly_ring, M_z, a_arr)
 
-        if not _check_poly_correspondence(self, self.D1, prox_proof_h1, cor_queries[0], f_commitment_root, U, Z):
+        if not self._check_poly_correspondence(self.D1, prox_proof_h1, cor_queries[0], f_commitment_root, U, Z):
             return False
 
         #verifier computes the alleged value of b, using provided a_arr
         b = 0
+        i = 0
         for coeff, M, P, Q in zip(alpha_powers, constraints):
-            elems = [f.substitute(m * self.X) for  m in M]
-            b += coeff * P.substitute(elems) / Q
-      
-        def _check_poly_correspondence(self, domain, h_proximity_proof, f_queries, f_commitment_root, A, B):
+            import copy
+            P_copy = copy.deepcopy(P)
+            Q_copy = copy.deepcopy(Q)
+
+            var_count = P.get_num_of_vars()
+            b += coeff * P_copy.evaluate(a_arr[i:i+var_count]) / Q_copy.evaluate(z) 
+            i+=var_count
+
+        #TODO: we need to use PolyProxy here because we are now unable to interpret b as a polynomial function
+        b = PolyProxy(self.poly_ring, {self.field(0): b})
+        if not self._check_poly_correspondence(self.D2, prox_proof_h2, cor_queries[1], g_commitment_root, b, self.X - z):
             return False
         return True
 

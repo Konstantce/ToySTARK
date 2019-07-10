@@ -178,8 +178,10 @@ def polynomialsOver(domain, variable_name = 'X'):
             replacements = [replacements]
 
          return self.substitute_impl(copy.deepcopy(self.coefficients), replacements)
-         
-             
+
+      @classmethod   
+      def get_num_of_vars(cls):
+         return cls.num_of_vars
 
       def __call__(self, coeffs):
          return self.evaluate(coeffs)
@@ -198,7 +200,8 @@ def polynomialsOver(domain, variable_name = 'X'):
    Polynomial.variable_name = variable_name
    Polynomial.__name__ = '(%s)[%s]' % (domain.__name__, variable_name)
    Polynomial.is_poly = True
-   Polynomial.base_field = domain.base_field if hasattr(domain, 'is_poly') else domain
+   Polynomial.base_field = domain.base_field if hasattr(domain, 'is_poly') else 
+   Polynomial.num_of_vars = domain.num_of_vars + 1 if hasattr(domain, "num_of_vars") else 1
 
    globals()[variable_name] = Polynomial([0, 1])
    return Polynomial
