@@ -4,7 +4,7 @@ from utils.utils import *
 import itertools
 
 class ARP:
-    def __init__(self, instance, witness = None):
+    def __init__(self, instance, size, witness = None):
         """Instance format: The instance x is a tuple (Fq, d, C) where:
             * Fq is a finite field of size q.
             * d is an integer representing a bound on the degree of the witness.
@@ -27,6 +27,9 @@ class ARP:
            constraints. 
         """
         self.witness = witness
+
+        #TODO: remove it later, associate with particular domain instead
+        self.size = size
 
     def check_witness(self):
         assert self.witness is not None, "Witness is undefined at this point."
@@ -74,5 +77,5 @@ class ARP:
         else:
             witness = None
 
-        return cls(instance, witness)
+        return cls(instance, W*T, witness)
         

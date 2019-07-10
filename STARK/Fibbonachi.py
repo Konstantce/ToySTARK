@@ -5,7 +5,7 @@ sys.path.append( path.dirname( path.dirname( path.abspath(__file__) ) ) )
 
 from algebra.finite_field import *
 
-p = 17
+p = 257
 Fp = IntegersModP(p, 3)
 
 #import merklee tree
@@ -74,6 +74,15 @@ mult_var_poly = multiivar_polynomialsOver(Fp, "X", "Y", "Z")
 h = mult_var_poly.from_string("X*Y + Z")
 print h.substitute([f, g, f])
 
+from relations.ALI import *
+from FRI.domain_ierarchy import *
+from FRI.fri_opp import *
+
+D1 = MultiplicativeDomainIerarchy(Fp, 8, 4, 1)
+D2 = MultiplicativeDomainIerarchy(Fp, 16, 4, 1)
+
+ali = ALI(arp, D1, D2, tree_constructor, FRI_OPP)
+ali.generate_proof(arp.witness)
 
 
 

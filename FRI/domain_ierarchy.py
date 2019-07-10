@@ -23,6 +23,9 @@ class DomainIerarchy():
     def get_domain_size(self, i):
         pass
 
+    def get_size(self):
+        return self.get_domain_size(0)
+
     #check if point p belongs to the i-th level of DomainIerarchy
     @abstractmethod
     def is_in_domain(self, p, i):
@@ -99,6 +102,9 @@ class MultiplicativeDomainIerarchy(DomainIerarchy):
         self.nu = nu
         self.omega = omega
 
+    def get_size(self):
+        return self.get_domain_size(0)
+
     def get_domain_size(self, i):
         return self.size / (2**(self.nu * i))
    
@@ -129,6 +135,9 @@ class MultiplicativeDomainIerarchy(DomainIerarchy):
     def get_domain_iter(self, i):
         level_omega = self._get_level_generator(i)
         return (level_omega ** i for i in xrange(self.get_domain_size(i)))
+
+    def __iter__(self):
+        return self.get_domain_iter(0)
 
     @staticmethod
     def _bitlen(x):

@@ -5,7 +5,11 @@ from algebra.polynomials import *
 
 class ALI:
     #here D1 and D2 should be FRI-OPP domains
-    def __init__(self, ARP_instance, D1, D1, merkleTreeFactory, ProximityProver):
+    def __init__(self, ARP_instance, D1, D2, merkleTreeFactory, ProximityProver):
+        print "size: ", ARP_instance.size
+        print "domain size: ", D1.get_size()
+        assert ARP_instance.size == D1.get_size(), "unable to place ARP inside AIR"
+
         self.ARP_instance = ARP_instance
         self.D1 = D1
         self.D2 = D2
@@ -17,7 +21,7 @@ class ALI:
         self.X = self.poly_ring([0, 1])
 
     def _get_full_mask_iter(self):
-        for M, P, Q in self.constraints:
+        for M, _, _ in self.ARP_instance.constraints:
             for m in M:
                 yield m
         return 
@@ -25,11 +29,11 @@ class ALI:
     def generate_proof(self, f):
         f_commitment = self.merkleTreeFactory([f.evaluate(x) for x in self.D1])
         alpha = self.field.from_hash(f_commitment.get_merkle_root())
-        constraints = len(self.ARP_instance.C)
-        alpha_powes = [alpha**(i+1) for xrange(constraints)]
+        len_constraints = len(self.ARP_instance.C)
+        alpha_powers = [alpha**(i+1) for i in xrange(len_constraints)]
 
         g = 0
-        for coeff, M, P, Q in zip(alpha_powers, constraints):
+        for coeff, M, P, Q in zip(alpha_powers, self.ARP_instance.constraints):
             elems = [f.substitute(m * self.X) for  m in M]
             g += coeff * P.substitute(elems) / Q
 
@@ -38,7 +42,7 @@ class ALI:
         while z in self.D2:
             z += 1
 
-        M_z = [z * m for m in self._get_full_mask_iter(m)]
+        M_z = [z * m for m in self._get_full_mask_iter()]
         a_arr = []
         for x in M_z:
             import copy
@@ -51,7 +55,7 @@ class ALI:
 
         h1 = (f - U)/Z
         g_copy = copy.deepcopy(g)
-        h2 = (g - g.evaluate(z))/(self.X - z)
+        h2 = (g - g_copy.evaluate(z))/(self.X - z)
 
         prox_proof_h1 = self.ProximityProver(self.D1, self.merkleTreeFactory).generate_proof(h1)
         prox_proof_h2 = self.ProximityProver(self.D2, self.merkleTreeFactory).generate_proof(h2)
@@ -59,27 +63,26 @@ class ALI:
         #now check that oracles for h1 and h2 agree with corresponding oracles for f and g
         cor_queries = []
         for domain, proximity_proof, commitment in [(self.D1, prox_proof_h1, f_commitment), (self.D2, prox_proof_h2, g_commitment)]:
-            root_hashes, f_last_coeffs, query_proof = proximity_proof
-            coeffs_tree = self.merkleTreeFactory(coeffs)
+            coeffs_tree = self.merkleTreeFactory(proximity_proof[1])
             s = domain.from_hash(coeffs_tree.get_merkle_root())
        
             coset_indices = [domain.get_index(p, 0) for p in domain.get_coset(s, 0)]
-            cor_queries.append((commitments[i].get_leaf(idx), commitments[i].get_proof(idx)) for idx in coset_indices)
+            cor_queries.append((commitment.get_leaf(idx), commitment.get_proof(idx)) for idx in coset_indices)
         
         ALI_proof = (f_commitment.get_merkle_root(), g_commitment.get_merkle_root(), a_arr, prox_proof_h1, prox_proof_h2, cor_queries)
         return ALI_proof
 
     #h * B = (f - A)
     def _check_poly_correspondence(self, domain, h_proximity_proof, f_queries, f_commitment_root, A, B):
-        h_last_coeffs = proximity_proof[1]
+        h_last_coeffs = h_proximity_proof[1]
         h_queries = h_proximity_proof[2][0]
-        coeffs_tree = self.merkleTreeFactory(coeffs)
+        coeffs_tree = self.merkleTreeFactory(h_last_coeffs)
         s = domain.from_hash(coeffs_tree.get_merkle_root())
 
         coset = domain.get_coset(s, 0)
         coset_indices = [domain.get_index(p, 0) for p in coset]
 
-        for idx, x, (f_leaf, f_proof), (g_leaf, g_proof) in zip(coset_indices, coset, f_queries, h_queries):
+        for idx, x, (f_leaf, f_proof), (h_leaf, _) in zip(coset_indices, coset, f_queries, h_queries):
             if not self.merkleTreeFactory.validate_proof(f_leaf, idx, f_proof, f_commitment_root):
                     return False
 
@@ -94,20 +97,20 @@ class ALI:
 
     def validate_proof(self, ALI_proof):
         f_commitment_root, g_commitment_root, a_arr, prox_proof_h1, prox_proof_h2, cor_queries = ALI_proof
-        constraints = len(self.ARP_instance.C)
+        len_constraints = len(self.ARP_instance.C)
 
         check_prox_proof_h1 = self.ProximityProver(self.D1, self.merkleTreeFactory).validate_proof(prox_proof_h1)
         check_prox_proof_h2 = self.ProximityProver(self.D2, self.merkleTreeFactory).validate_proof(prox_proof_h2)
         if not check_prox_proof_h1 or not check_prox_proof_h2:
             return False
 
-        alpha = self.field.from_hash(f_commitment_root]
-        alpha_powes = [alpha**(i+1) for xrange(constraints)]
+        alpha = self.field.from_hash(f_commitment_root)
+        alpha_powers = [alpha**(i+1) for i in xrange(len_constraints)]
         z = self.field.from_hash(g_commitment_root)
         while z in self.D2:
             z += 1
 
-        M_z = [z * m for m in self._get_full_mask_iter(m)]
+        M_z = [z * m for m in self._get_full_mask_iter()]
         Z = reduce((lambda x, y: x * (self.X - y), M_z, 1))
         U = construct_interpolation_poly(self.poly_ring, M_z, a_arr)
 
@@ -117,7 +120,7 @@ class ALI:
         #verifier computes the alleged value of b, using provided a_arr
         b = 0
         i = 0
-        for coeff, M, P, Q in zip(alpha_powers, constraints):
+        for coeff, _, P, Q in zip(alpha_powers, self.ARP_instance.constraints):
             import copy
             P_copy = copy.deepcopy(P)
             Q_copy = copy.deepcopy(Q)
