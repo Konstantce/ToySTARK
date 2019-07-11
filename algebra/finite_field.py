@@ -84,6 +84,9 @@ def IntegersModP(p, prim_element = None):
       def __int__(self):
          return self.n
 
+      def __hash__(self):
+         return self.n
+
       @classmethod
       def get_prim_element(cls):
          if cls.prim_elem is None:

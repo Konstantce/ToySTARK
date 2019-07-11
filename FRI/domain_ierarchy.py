@@ -58,7 +58,7 @@ class DomainIerarchy():
     #returns point (alongside with its' trapdoor information) from random bitstring
     #which should be the Python bytes types - a usual digest for different hash functions
     @abstractmethod
-    def from_hash(self, data, i):
+    def from_hash(self, data, i=0):
         pass
     
     #here where the trapdoor information is used - returns the position of point p
@@ -149,7 +149,7 @@ class MultiplicativeDomainIerarchy(DomainIerarchy):
     
     #returns point (alongside with its' trapdoor information) from random bitstring
     #which should be the Python bytes types - a usual digest for different hash functions
-    def from_hash(self, data, i):
+    def from_hash(self, data, i=0):
         if self._bitlen(self.get_domain_size(i)) >= len(data) * 8:
             raise StarkError("Provided bitstring is too short.")
 

@@ -82,8 +82,8 @@ D1 = MultiplicativeDomainIerarchy(Fp, 8, 4, 1)
 D2 = MultiplicativeDomainIerarchy(Fp, 16, 4, 1)
 
 ali = ALI(arp, D1, D2, tree_constructor, FRI_OPP)
-ali.generate_proof(arp.witness)
-
+ali_proof =  ali.generate_proof(arp.witness)
+print ali.validate_proof(ali_proof)
 
 
 

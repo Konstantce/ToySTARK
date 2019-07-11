@@ -118,7 +118,7 @@ def polynomialsOver(domain, variable_name = 'X'):
          return quotient, remainder
 
       @typecheck
-      def __truediv__(self, divisor):
+      def __div__(self, divisor):
          if divisor.isZero():
             raise ZeroDivisionError
          return divmod(self, divisor)[0]
